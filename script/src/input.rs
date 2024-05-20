@@ -2,11 +2,8 @@ use anyhow::Result;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
-use std::time::Duration;
 use subxt::backend::rpc::RpcSubscription;
 
-use alloy_sol_types::{sol, SolType};
-use anyhow::anyhow;
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
 use avail_subxt::primitives::Header;
@@ -18,7 +15,7 @@ use futures::future::join_all;
 use sha2::{Digest, Sha256};
 use sp_core::{ed25519, Pair};
 
-use crate::consts::{PUBKEY_LENGTH, VALIDATOR_LENGTH};
+use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
 use crate::types::{
     CircuitJustification, EncodedFinalityProof, FinalityProof, GrandpaJustification,
     HeaderRotateData, SignerMessage,
@@ -81,9 +78,6 @@ pub struct RpcDataFetcher {
 }
 
 impl RpcDataFetcher {
-    const MAX_RECONNECT_ATTEMPTS: usize = 3;
-    const RECONNECT_DELAY: Duration = Duration::from_secs(5);
-
     pub async fn new() -> Self {
         dotenv::dotenv().ok();
 
@@ -186,13 +180,13 @@ impl RpcDataFetcher {
 
         let mut data_root_leaves = Vec::new();
         let mut state_root_leaves = Vec::new();
-        for i in 0..headers.len() {
-            let header = &headers[i];
+        let num_headers = headers.len();
+        for header in headers {
             data_root_leaves.push(header.data_root().0.to_vec());
             state_root_leaves.push(header.state_root.0.to_vec());
         }
 
-        for _ in headers.len()..header_range_commitment_tree_size as usize {
+        for _ in num_headers..header_range_commitment_tree_size as usize {
             data_root_leaves.push([0u8; 32].to_vec());
             state_root_leaves.push([0u8; 32].to_vec());
         }
@@ -320,7 +314,7 @@ impl RpcDataFetcher {
         &self,
         justification: GrandpaJustification,
         block_number: u32,
-    ) -> Result<CircuitJustification> {
+    ) -> CircuitJustification {
         let authority_set_id = self.get_authority_set_id(block_number).await;
 
         // Form a message which is signed in the justification.
@@ -352,31 +346,30 @@ impl RpcDataFetcher {
         for authority in authorities.clone() {
             let signature = pubkey_to_signature.get(&authority);
             if let Some(signature) = signature {
-                signatures.push(Some(signature));
+                signatures.push(Some(*signature));
             } else {
                 signatures.push(None);
+            }
         }
-
         // Total votes is the total number of entries in pubkey_to_signature.
         let total_votes = pubkey_to_signature.len();
 
         if total_votes * 3 < num_authorities * 2 {
             panic!("Not enough voting power");
         }
-
-        Ok(CircuitJustification {
+        CircuitJustification {
             signed_message,
             authority_set_id,
             current_authority_set_hash,
             pubkeys: authorities.clone(),
             signatures,
             num_authorities,
-        })
+        }
     }
 
     /// Get the latest justification data. Because Avail does not store the justification data for
     /// all blocks, we can only generate a proof using the latest justification data or the justification data for a specific block.
-    async fn get_latest_justification_data(&self) -> Result<CircuitJustification> {
+    async fn get_latest_justification_data(&self) -> CircuitJustification {
         let sub: Result<RpcSubscription<GrandpaJustification>, _> = self
             .client
             .rpc()
@@ -403,56 +396,51 @@ impl RpcDataFetcher {
                 .compute_data_from_justification(justification, block_number)
                 .await;
         }
-        Err(anyhow!("Missing attribute"))
+        panic!("No justification found")
     }
 
-    /// Get the justification data for the given epoch end block.
-    /// Fetch the authority set and justification proof for block_number. If the finality proof is a
+    /// Get the justification data for a rotate from the curr_authority_set_id to the next authority set id.
+    /// Fetch the authority set and justification proof for the last block in the current epoch. If the finality proof is a
     /// simple justification, return a CircuitJustification with the encoded precommit that all
     /// authorities sign, the validator signatures, and the authority set's pubkeys.
-    async fn get_justification_data_epoch_end(
+    pub async fn get_justification_data_rotate(
         &self,
-        epoch_end_block: u32,
-    ) -> Result<CircuitJustification> {
-        // Note: grandpa_proveFinality will serve the proof for the last justified block in an epoch.
-        // get_simple_justification should fail for any block that is not the last justified block
-        // in an epoch.
-        let curr_authority_set_id = self.get_authority_set_id(epoch_end_block).await;
-        let prev_authority_set_id = self.get_authority_set_id(epoch_end_block - 1).await;
+        curr_authority_set_id: u64,
+    ) -> CircuitJustification {
+        let epoch_end_block = self.last_justified_block(curr_authority_set_id).await;
+        if epoch_end_block == 0 {
+            panic!("Current authority set is still active!");
+        }
 
         // If epoch end block, use grandpa_proveFinality to get the justification.
-        if curr_authority_set_id == prev_authority_set_id + 1 {
-            let mut params = RpcParams::new();
-            let _ = params.push(epoch_end_block);
+        let mut params = RpcParams::new();
+        let _ = params.push(epoch_end_block);
 
-            let encoded_finality_proof = self
-                .client
-                .rpc()
-                .request::<EncodedFinalityProof>("grandpa_proveFinality", params)
-                .await
-                .unwrap();
+        let encoded_finality_proof = self
+            .client
+            .rpc()
+            .request::<EncodedFinalityProof>("grandpa_proveFinality", params)
+            .await
+            .unwrap();
 
-            let finality_proof: FinalityProof =
-                Decode::decode(&mut encoded_finality_proof.0 .0.as_slice()).unwrap();
-            let justification: GrandpaJustification =
-                Decode::decode(&mut finality_proof.justification.as_slice()).unwrap();
+        let finality_proof: FinalityProof =
+            Decode::decode(&mut encoded_finality_proof.0 .0.as_slice()).unwrap();
+        let justification: GrandpaJustification =
+            Decode::decode(&mut finality_proof.justification.as_slice()).unwrap();
 
-            return self
-                .compute_data_from_justification(justification, epoch_end_block)
-                .await;
-        }
-        Err(anyhow!("Missing attribute"))
+        self.compute_data_from_justification(justification, epoch_end_block)
+            .await
     }
 
     /// This function takes in a block_number as input, and fetches the new authority set specified
     /// in the epoch end block. It returns the data necessary to prove the new authority set, which
     /// specifies the new authority set hash, the number of authorities, and the start and end
     /// position of the encoded new authority set in the header.
-    pub async fn get_header_rotate(&self, epoch_end_block: u32) -> HeaderRotateData {
-        // Assert epoch_end_block is a valid epoch end block.
-        let epoch_end_block_authority_set_id = self.get_authority_set_id(epoch_end_block).await;
-        let prev_authority_set_id = self.get_authority_set_id(epoch_end_block - 1).await;
-        assert_eq!(epoch_end_block_authority_set_id - 1, prev_authority_set_id);
+    pub async fn get_header_rotate(&self, authority_set_id: u64) -> HeaderRotateData {
+        let epoch_end_block = self.last_justified_block(authority_set_id).await;
+        if epoch_end_block == 0 {
+            panic!("Current authority set is still active!");
+        }
 
         let header = self.get_header(epoch_end_block).await;
 
@@ -464,8 +452,13 @@ impl RpcDataFetcher {
         let num_authorities = new_authorities.len();
         let encoded_num_authorities_len = Compact(num_authorities as u32).encode().len();
 
+        let mut position = 0;
+        let number_encoded = Compact(epoch_end_block).encode();
+        // Skip past parent_hash, number, state_root, extrinsics_root.
+        position += HASH_SIZE + number_encoded.len() + HASH_SIZE + HASH_SIZE;
         let mut found_correct_log = false;
         for log in header.digest.logs {
+            let encoded_log = log.clone().encode();
             // Note: Two bytes are skipped between the consensus id and value.
             if let DigestItem::Consensus(consensus_id, value) = log {
                 if consensus_id == [70, 82, 78, 75] {
@@ -505,6 +498,10 @@ impl RpcDataFetcher {
                     break;
                 }
             }
+            // If this is not the correct log, increment position by the length of the encoded log.
+            if !found_correct_log {
+                position += encoded_log.len();
+            }
         }
 
         // Panic if there is not a consensus log.
@@ -522,6 +519,7 @@ impl RpcDataFetcher {
             num_authorities: new_authorities.len(),
             new_authority_set_hash,
             pubkeys: new_authorities,
+            position,
         }
     }
 }
@@ -531,12 +529,11 @@ mod tests {
     use avail_subxt::config::Header;
 
     use super::*;
-    use crate::consts::MAX_AUTHORITY_SET_SIZE;
 
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_block_headers_range() {
-        let mut fetcher = RpcDataFetcher::new().await;
+        let fetcher = RpcDataFetcher::new().await;
         let _ = fetcher.get_block_headers_range(100000, 100256).await;
 
         let (_, data_root_commitment) = fetcher
@@ -561,7 +558,7 @@ mod tests {
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_header_hash() {
-        let mut fetcher = RpcDataFetcher::new().await;
+        let fetcher = RpcDataFetcher::new().await;
 
         let target_block = 529000;
         let header = fetcher.get_header(target_block).await;
@@ -584,7 +581,7 @@ mod tests {
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_authority_set_id() {
-        let mut fetcher = RpcDataFetcher::new().await;
+        let fetcher = RpcDataFetcher::new().await;
         let mut block: u32 = 215000;
 
         loop {
@@ -623,7 +620,7 @@ mod tests {
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_justification_from_block() {
-        let mut fetcher = RpcDataFetcher::new().await;
+        let fetcher = RpcDataFetcher::new().await;
 
         let justification = fetcher.get_latest_justification_data().await;
         println!("justification {:?}", justification);
@@ -632,7 +629,7 @@ mod tests {
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_simple_justification_change_authority_set() {
-        let mut fetcher = RpcDataFetcher::new().await;
+        let fetcher = RpcDataFetcher::new().await;
 
         // This is an block in the middle of an era.
         let block = 645570;
@@ -646,7 +643,9 @@ mod tests {
         println!("authority_set_hash {:?}", hex::encode(authority_set_hash.0));
         println!("header_hash {:?}", hex::encode(header_hash.0));
 
-        let _ = fetcher.get_justification_data_epoch_end(block).await;
+        let _ = fetcher
+            .get_justification_data_rotate(authority_set_id)
+            .await;
     }
 
     #[tokio::test]
@@ -655,7 +654,7 @@ mod tests {
         dotenv::dotenv().ok();
         env_logger::init();
 
-        let mut fetcher = RpcDataFetcher::new().await;
+        let fetcher = RpcDataFetcher::new().await;
 
         // A binary search given a target_authority_set_id, returns the last block justified by
         // target_authority_set_id. This block also specifies the new authority set,
@@ -676,7 +675,7 @@ mod tests {
         assert_eq!(previous_authority_set_id + 1, authority_set_id);
         assert_eq!(previous_authority_set_id, target_authority_set_id);
 
-        let rotate_data = fetcher.get_header_rotate(epoch_end_block_number).await;
+        let rotate_data = fetcher.get_header_rotate(authority_set_id).await;
         println!(
             "new authority set hash {:?}",
             rotate_data.new_authority_set_hash

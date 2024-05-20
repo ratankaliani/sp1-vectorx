@@ -6,11 +6,11 @@ edition = "2021"
 
 [[bin]]
 name = "rotate"
-path = "./bin/rotate.rs"
+path = "src/bin/rotate.rs"
 
 [[bin]]
 name = "header_range"
-path = "./bin/header_range.rs"
+path = "src/bin/header_range.rs"
 
 [dependencies]
 sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }

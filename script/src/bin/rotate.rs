@@ -5,11 +5,15 @@ use std::env;
 use ed25519_consensus::{Signature, SigningKey, VerificationKey, VerificationKeyBytes};
 use rand::{thread_rng, Rng};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
+use sp1_vectorx_script::input::RpcDataFetcher;
 
 const ELF: &[u8] = include_bytes!("../../../program/elf/riscv32im-succinct-zkvm-elf");
 
-fn main() {
+#[tokio::main]
+async fn main() {
     setup_logger();
+
+    let fetcher = RpcDataFetcher::new().await;
 
     // Supply an initial authority set id.
     // TODO: Read from args, then read from contract. Reading from contract do at the end.
@@ -20,8 +24,12 @@ fn main() {
     let authority_set_hash = "0x0000000000000000000000000000000000000000000000000000000000000000";
 
     // Fetch the justification for the epoch end block of the specified authority set id.
+    let justification = fetcher
+        .get_justification_data_rotate(authority_set_id)
+        .await;
 
-    //
+    // Fetch the header rotate data for the specified authority set id.
+    let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
 
     // Generate proof.
     let mut stdin = SP1Stdin::new();

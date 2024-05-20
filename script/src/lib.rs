@@ -1,3 +1,3 @@
 mod consts;
-mod input;
+pub mod input;
 mod types;
