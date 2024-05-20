@@ -2,7 +2,7 @@
 
 use std::env;
 
-use ed25519_consensus::{Signature, SigningKey, VerificationKey, VerificationKeyBytes};
+use ed25519_consensus::{SigningKey, VerificationKey};
 use rand::{thread_rng, Rng};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 
