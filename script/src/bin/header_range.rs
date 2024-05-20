@@ -6,7 +6,8 @@ use ed25519_consensus::{Signature, SigningKey, VerificationKey, VerificationKeyB
 use rand::{thread_rng, Rng};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 
-const ELF: &[u8] = include_bytes!("../../../program/elf/riscv32im-succinct-zkvm-elf");
+const HEADER_RANGE_ELF: &[u8] =
+    include_bytes!("../../../header-range/elf/riscv32im-succinct-zkvm-elf");
 
 fn main() {
     setup_logger();
@@ -28,7 +29,7 @@ fn main() {
 
     env::set_var("SP1_PROVER", "mock");
     let client = ProverClient::new();
-    let (pk, vk) = client.setup(ELF);
+    let (pk, vk) = client.setup(HEADER_RANGE_ELF);
     env::set_var("SP1_PROVER", "mock");
     let mut proof = client.prove(&pk, stdin).expect("proving failed");
 

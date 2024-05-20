@@ -7,7 +7,7 @@ use rand::{thread_rng, Rng};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_script::input::RpcDataFetcher;
 
-const ELF: &[u8] = include_bytes!("../../../program/elf/riscv32im-succinct-zkvm-elf");
+const ROTATE_ELF: &[u8] = include_bytes!("../../../rotate/elf/riscv32im-succinct-zkvm-elf");
 
 #[tokio::main]
 async fn main() {
@@ -49,7 +49,7 @@ async fn main() {
 
     env::set_var("SP1_PROVER", "mock");
     let client = ProverClient::new();
-    let (pk, vk) = client.setup(ELF);
+    let (pk, vk) = client.setup(ROTATE_ELF);
     env::set_var("SP1_PROVER", "mock");
     let mut proof = client.prove(&pk, stdin).expect("proving failed");
 

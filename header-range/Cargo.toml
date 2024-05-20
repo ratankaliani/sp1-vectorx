@@ -1,0 +1,15 @@
+[workspace]
+[package]
+version = "0.1.0"
+name = "sp1-vectorx-header-range-program"
+edition = "2021"
+
+[dependencies]
+sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }
+ed25519-consensus = { version = "2", default-features = false }
+blake2 = "0.10.6"
+sha2 = "0.10.8"
+
+[patch.crates-io]
+ed25519-consensus = { git = "https://github.com/sp1-patches/ed25519-consensus", branch = "patch-v2.1.0" }
+sha2-v0-10-8 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha2", branch = "patch-v0.10.8" }
