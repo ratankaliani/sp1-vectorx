@@ -33,11 +33,8 @@ async fn main() {
     // Generate proof.
     let mut stdin = SP1Stdin::new();
 
-    env::set_var("SP1_PROVER", "mock");
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ROTATE_ELF);
-
-    env::set_var("SP1_PROVER", "mock");
     let proof = client.prove(&pk, stdin).expect("proving failed");
 
     // Verify proof.
