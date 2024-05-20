@@ -351,11 +351,10 @@ impl RpcDataFetcher {
         let mut signatures = Vec::new();
         for authority in authorities.clone() {
             let signature = pubkey_to_signature.get(&authority);
-            if signature.is_none() {
-                signatures.push(None);
+            if let Some(signature) = signature {
+                signatures.push(Some(signature));
             } else {
-                signatures.push(Some(*signature.unwrap()));
-            }
+                signatures.push(None);
         }
 
         // Total votes is the total number of entries in pubkey_to_signature.

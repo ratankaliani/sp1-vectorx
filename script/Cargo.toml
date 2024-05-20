@@ -4,6 +4,14 @@ version = "0.1.0"
 name = "sp1-vectorx-script"
 edition = "2021"
 
+[[bin]]
+name = "rotate"
+path = "./bin/rotate.rs"
+
+[[bin]]
+name = "header_range"
+path = "./bin/header_range.rs"
+
 [dependencies]
 sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }
 ed25519-consensus = { version = "2", default-features = false }
