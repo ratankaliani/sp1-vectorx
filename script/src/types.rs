@@ -25,6 +25,7 @@ pub struct SignedPrecommit {
 #[derive(Clone, Debug, Decode, Deserialize)]
 pub struct Commit {
     pub target_hash: H256,
+    #[allow(dead_code)]
     /// The target block's number.
     pub target_number: u32,
     /// Precommits for target block or any block after it that justify this commit.
@@ -35,6 +36,7 @@ pub struct Commit {
 pub struct GrandpaJustification {
     pub round: u64,
     pub commit: Commit,
+    #[allow(dead_code)]
     pub votes_ancestries: Vec<Header>,
 }
 

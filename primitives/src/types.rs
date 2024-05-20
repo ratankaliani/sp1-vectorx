@@ -27,3 +27,11 @@ pub struct HeaderRangeProofRequestData {
     pub authority_set_hash: [u8; 32],
     pub target_block: u32,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct DecodedHeaderData {
+    block_number: u32,
+    parent_hash: Vec<u8>,
+    state_root: Vec<u8>,
+    data_root: Vec<u8>,
+}

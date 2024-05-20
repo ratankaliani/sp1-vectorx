@@ -11,7 +11,6 @@ use avail_subxt::config::substrate::DigestItem;
 use avail_subxt::primitives::Header;
 use avail_subxt::{api, RpcParams};
 use codec::{Compact, Decode, Encode};
-use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use ethers::types::H256;
 use futures::future::join_all;
 use sha2::{Digest, Sha256};
