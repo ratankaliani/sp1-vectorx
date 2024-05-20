@@ -30,8 +30,8 @@ pub struct HeaderRangeProofRequestData {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DecodedHeaderData {
-    block_number: u32,
-    parent_hash: Vec<u8>,
-    state_root: Vec<u8>,
-    data_root: Vec<u8>,
+    pub block_number: u32,
+    pub parent_hash: Vec<u8>,
+    pub state_root: Vec<u8>,
+    pub data_root: Vec<u8>,
 }
