@@ -10,6 +10,6 @@ use sha2::{Digest as Sha256Digest, Sha256};
 use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
 
 pub fn main() {
-    let pk = sp1_zkvm::io::read::<CircuitJustification>();
+    let justification = sp1_zkvm::io::read::<CircuitJustification>();
     let header_rotate_data = sp1_zkvm::io::read::<HeaderRotateData>();
 }
