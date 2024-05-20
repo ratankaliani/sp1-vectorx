@@ -4,6 +4,8 @@ use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
 
+use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
+
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
 use avail_subxt::primitives::Header;
@@ -16,10 +18,7 @@ use sha2::{Digest, Sha256};
 use sp_core::{ed25519, Pair};
 
 use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
-use crate::types::{
-    CircuitJustification, EncodedFinalityProof, FinalityProof, GrandpaJustification,
-    HeaderRotateData, SignerMessage,
-};
+use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid
 fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
@@ -332,7 +331,10 @@ impl RpcDataFetcher {
                 &precommit.clone().id,
             );
             if is_ok {
-                pubkey_to_signature.insert(precommit.clone().id.0, precommit.clone().signature.0);
+                pubkey_to_signature.insert(
+                    precommit.clone().id.0,
+                    precommit.clone().signature.0.to_vec(),
+                );
             }
         }
 
@@ -343,12 +345,7 @@ impl RpcDataFetcher {
 
         let mut signatures = Vec::new();
         for authority in authorities.clone() {
-            let signature = pubkey_to_signature.get(&authority);
-            if let Some(signature) = signature {
-                signatures.push(Some(*signature));
-            } else {
-                signatures.push(None);
-            }
+            signatures.push(pubkey_to_signature.get(&authority).cloned());
         }
         // Total votes is the total number of entries in pubkey_to_signature.
         let total_votes = pubkey_to_signature.len();

@@ -6,45 +6,6 @@ use serde::{Deserialize, Serialize};
 use sp_core::ed25519::{Public as EdPublic, Signature};
 use sp_core::{bytes, Bytes};
 
-pub struct HeaderRotateData {
-    pub header_bytes: Vec<u8>,
-    pub num_authorities: usize,
-    pub new_authority_set_hash: Vec<u8>,
-    pub pubkeys: Vec<[u8; 32]>,
-    pub position: usize,
-}
-
-// Stores the signed messages, valid signatures and pubkeys for a given block number justification.
-// Note: There is a redis macros crate that can be used to serialize this.
-// https://github.com/daniel7grant/redis-macros/#json-wrapper-with-redisjson
-
-#[derive(Clone)]
-pub struct StoredJustificationData {
-    pub block_number: u32,
-    pub signed_message: Vec<u8>,
-    pub pubkeys: Vec<[u8; 32]>,
-    pub signatures: Vec<Option<[u8; 64]>>,
-    pub num_authorities: usize,
-}
-
-#[derive(Debug)]
-pub struct CircuitJustification {
-    pub authority_set_id: u64,
-    pub signed_message: Vec<u8>,
-    pub pubkeys: Vec<[u8; 32]>,
-    pub signatures: Vec<Option<[u8; 64]>>,
-    pub num_authorities: usize,
-    pub current_authority_set_hash: Vec<u8>,
-}
-
-pub struct SimpleJustificationData {
-    pub pubkeys: Vec<[u8; 32]>,
-    pub signatures: Vec<Option<[u8; 64]>>,
-    pub signed_message: Vec<u8>,
-    pub voting_weight: u64,
-    pub num_authorities: u64,
-}
-
 #[derive(Clone, Debug, Decode, Encode, Deserialize)]
 pub struct Precommit {
     pub target_hash: H256,

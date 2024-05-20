@@ -13,6 +13,7 @@ name = "header_range"
 path = "src/bin/header_range.rs"
 
 [dependencies]
+sp1-vectorx-primitives = { path = "../primitives" }
 sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }
 ed25519-consensus = { version = "2", default-features = false }
 rand = "0.8"

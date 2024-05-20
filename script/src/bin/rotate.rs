@@ -27,7 +27,6 @@ async fn main() {
         .get_justification_data_rotate(authority_set_id)
         .await;
 
-    // Fetch the header rotate data for the specified authority set id.
     let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
 
     // Generate proof.

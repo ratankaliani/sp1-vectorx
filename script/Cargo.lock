@@ -9158,6 +9158,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp1-vectorx-primitives"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 4.5.4",
+ "dotenv",
+ "ed25519-dalek",
+ "serde",
+ "sha2 0.10.8",
+]
+
+[[package]]
 name = "sp1-vectorx-script"
 version = "0.1.0"
 dependencies = [
@@ -9189,6 +9201,7 @@ dependencies = [
  "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-2)",
  "sp1-helper",
  "sp1-sdk",
+ "sp1-vectorx-primitives",
  "subxt",
  "tokio",
 ]
