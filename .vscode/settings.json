@@ -18,7 +18,9 @@
         "incomplete-features"
     ],
     "rust-analyzer.linkedProjects": [
-        "program/Cargo.toml",
+        "header-range/Cargo.toml",
+        "primitives/Cargo.toml",
+        "rotate/Cargo.toml",
         "script/Cargo.toml",
     ],
     "rust-analyzer.showUnlinkedFileNotification": false

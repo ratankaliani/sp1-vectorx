@@ -20,15 +20,6 @@ use sp_core::{ed25519, Pair};
 use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 
-/// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid
-fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
-    let pubkey = VerifyingKey::from_bytes(pubkey_bytes).unwrap();
-    let verified = pubkey.verify(signed_message, &Signature::from_bytes(signature));
-    if verified.is_err() {
-        panic!("Signature is not valid");
-    }
-}
-
 // Compute the chained hash of the authority set.
 pub fn compute_authority_set_hash(authorities: &[[u8; 32]]) -> Vec<u8> {
     let mut hash_so_far = Vec::new();
@@ -196,7 +187,7 @@ impl RpcDataFetcher {
         )
     }
 
-    // This function returns a vector of headers for a given range of block numbers, inclusive of the start and end block numbers.
+    /// This function returns a vector of headers for a given range of block numbers, inclusive of the start and end block numbers.
     pub async fn get_block_headers_range(
         &self,
         start_block_number: u32,
@@ -365,7 +356,7 @@ impl RpcDataFetcher {
 
     /// Get the latest justification data. Because Avail does not store the justification data for
     /// all blocks, we can only generate a proof using the latest justification data or the justification data for a specific block.
-    async fn get_latest_justification_data(&self) -> CircuitJustification {
+    pub async fn get_latest_justification_data(&self) -> (CircuitJustification, Header) {
         let sub: Result<RpcSubscription<GrandpaJustification>, _> = self
             .client
             .rpc()
@@ -388,9 +379,11 @@ impl RpcDataFetcher {
                 .unwrap()
                 .unwrap();
             let block_number = header.number;
-            return self
-                .compute_data_from_justification(justification, block_number)
-                .await;
+            return (
+                self.compute_data_from_justification(justification, block_number)
+                    .await,
+                header,
+            );
         }
         panic!("No justification found")
     }

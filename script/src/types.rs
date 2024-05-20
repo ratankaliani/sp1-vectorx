@@ -51,7 +51,6 @@ impl<'de> Deserialize<'de> for GrandpaJustification {
 
 #[derive(Debug, Encode)]
 pub enum SignerMessage {
-    DummyMessage(u32),
     PrecommitMessage(Precommit),
 }
 

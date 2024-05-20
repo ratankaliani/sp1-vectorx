@@ -18,3 +18,12 @@ pub struct CircuitJustification {
     pub num_authorities: usize,
     pub current_authority_set_hash: Vec<u8>,
 }
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct HeaderRangeProofRequestData {
+    pub trusted_block: u32,
+    pub trusted_header_hash: [u8; 32],
+    pub authority_set_id: u64,
+    pub authority_set_hash: [u8; 32],
+    pub target_block: u32,
+}

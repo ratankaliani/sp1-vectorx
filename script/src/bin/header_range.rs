@@ -1,38 +1,58 @@
 //! A simple script to generate and verify the proof of a given program.
 
-use std::env;
-
-use ed25519_consensus::{SigningKey, VerificationKey};
-use rand::{thread_rng, Rng};
+use codec::Encode;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
+use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
+use sp1_vectorx_script::input::RpcDataFetcher;
+use subxt::config::Header;
 
 const HEADER_RANGE_ELF: &[u8] =
     include_bytes!("../../../header-range/elf/riscv32im-succinct-zkvm-elf");
 
-fn main() {
+#[tokio::main]
+async fn main() {
     setup_logger();
+
+    let fetcher = RpcDataFetcher::new().await;
+
+    // TODO: Update this to read from args/on-chain.
+    let head = fetcher.get_head().await;
+    let trusted_block = head.number - 10;
+
+    let trusted_header = fetcher.get_header(trusted_block).await;
+    let trusted_header_hash = trusted_header.hash();
+
+    let authority_set_id = fetcher.get_authority_set_id(trusted_block).await;
+    let authority_set_hash = fetcher.compute_authority_set_hash(trusted_block).await;
+
+    // TODO: It may make sense to fetch this from an indexer similar to VectorX, this isn't resilient to downtime.
+    let (target_justification, target_header) = fetcher.get_latest_justification_data().await;
+    let target_block = target_header.number;
+
+    let headers = fetcher
+        .get_block_headers_range(trusted_block, target_block)
+        .await;
+    let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
+
     // Generate proof.
     let mut stdin = SP1Stdin::new();
-    let sk = SigningKey::new(thread_rng());
-    let pk = VerificationKey::from(&sk);
-    // Random message with thread_rng.
-    let msg = thread_rng().gen::<[u8; 32]>();
+    stdin.write(&HeaderRangeProofRequestData {
+        trusted_block,
+        target_block,
+        trusted_header_hash: trusted_header_hash.0,
+        authority_set_hash: authority_set_hash.0,
+        authority_set_id,
+    });
+    // Should be target_block - trusted_block + 1 headers.
+    for encoded_header in encoded_headers {
+        stdin.write_vec(encoded_header);
+    }
 
-    let sig = sk.sign(&msg[..]);
+    stdin.write(&target_justification);
 
-    let pk_array: [u8; 32] = pk.into();
-    let sig_array: [u8; 64] = sig.into();
-
-    stdin.write_vec(pk_array.to_vec());
-    stdin.write_vec(sig_array.to_vec());
-    stdin.write_vec(msg.to_vec());
-
-    env::set_var("SP1_PROVER", "mock");
     let client = ProverClient::new();
     let (pk, vk) = client.setup(HEADER_RANGE_ELF);
-    env::set_var("SP1_PROVER", "mock");
-    let mut proof = client.prove(&pk, stdin).expect("proving failed");
-
+    let proof = client.prove(&pk, stdin).expect("proving failed");
     // Verify proof.
     client.verify(&proof, &vk).expect("verification failed");
 

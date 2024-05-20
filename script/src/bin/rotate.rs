@@ -1,7 +1,5 @@
 //! A simple script to generate and verify the proof of a given program.
 
-use std::env;
-
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_script::input::RpcDataFetcher;
 
@@ -20,7 +18,9 @@ async fn main() {
 
     // Fetch the authority set hash for the specified authority set id.
     // TODO: In the future, this will be read from the contract, along with the epoch end block number.
-    let authority_set_hash = fetcher.compute_authority_set_hash(epoch_end_block - 1);
+    let authority_set_hash = fetcher
+        .compute_authority_set_hash(epoch_end_block - 1)
+        .await;
 
     // Fetch the justification for the epoch end block of the specified authority set id.
     let justification = fetcher
@@ -31,6 +31,10 @@ async fn main() {
 
     // Generate proof.
     let mut stdin = SP1Stdin::new();
+    stdin.write(&authority_set_id);
+    stdin.write(&authority_set_hash);
+    stdin.write(&justification);
+    stdin.write(&header_rotate_data);
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ROTATE_ELF);

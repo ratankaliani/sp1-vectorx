@@ -13,8 +13,7 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
 // Compute the chained hash of the authority set.
 pub fn compute_authority_set_hash(authorities: &[&[u8]]) -> Vec<u8> {
     let mut hash_so_far = Vec::new();
-    for i in 0..authorities.len() {
-        let authority = authorities[i];
+    for authority in authorities {
         let mut hasher = sha2::Sha256::new();
         hasher.update(hash_so_far);
         hasher.update(authority);

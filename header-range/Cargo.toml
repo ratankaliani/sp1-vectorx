@@ -5,6 +5,7 @@ name = "sp1-vectorx-header-range-program"
 edition = "2021"
 
 [dependencies]
+sp1-vectorx-primitives = { path = "../primitives" }
 sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }
 ed25519-consensus = { version = "2", default-features = false }
 blake2 = "0.10.6"
