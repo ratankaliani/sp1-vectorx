@@ -23,18 +23,18 @@ async fn main() {
         .await;
 
     // Fetch the justification for the epoch end block of the specified authority set id.
-    let justification = fetcher
-        .get_justification_data_rotate(authority_set_id)
-        .await;
+    // let justification = fetcher
+    //     .get_justification_data_rotate(authority_set_id)
+    //     .await;
 
-    let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
+    // let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
 
     // Generate proof.
     let mut stdin = SP1Stdin::new();
     stdin.write(&authority_set_id);
     stdin.write(&authority_set_hash);
-    stdin.write(&justification);
-    stdin.write(&header_rotate_data);
+    // stdin.write(&justification);
+    // stdin.write(&header_rotate_data);
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ROTATE_ELF);

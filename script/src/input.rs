@@ -339,7 +339,8 @@ impl RpcDataFetcher {
         }
         // Total votes is the total number of entries in pubkey_to_signature.
         let total_votes = pubkey_to_signature.len();
-
+        println!("Total votes: {}", total_votes);
+        println!("Num authorities:  {}", num_authorities);
         if total_votes * 3 < num_authorities * 2 {
             panic!("Not enough voting power");
         }
