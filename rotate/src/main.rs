@@ -7,7 +7,7 @@ use core::num;
 
 use blake2::{Blake2b512, Digest};
 use ed25519_consensus::{Signature, VerificationKey};
-use sp1_vectorx_primitives::{types::{CircuitJustification, HeaderRotateData}, verify_simple_justification};
+use sp1_vectorx_primitives::{compute_authority_set_commitment, types::{CircuitJustification, HeaderRotateData}, verify_simple_justification};
 
 pub fn main() {
     let current_authority_set_id = sp1_zkvm::io::read::<u64>();
@@ -17,7 +17,7 @@ pub fn main() {
 
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash: Vec<u8> =
-        compute_authority_set_commitment(justification.num_authorities, justification.pubkeys);
+        compute_authority_set_commitment(justification.num_authorities, justification.pubkeys.clone());
     let new_authority_set_hash_bytes32: [u8; 32] = new_authority_set_hash
         .try_into()
         .expect("Failed to convert hash to bytes32");

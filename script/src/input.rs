@@ -7,8 +7,9 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
-use ethers:types::H256;
-use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData}, decode_precommit;
+use ethers::types::H256;
+use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
+use sp1_vectorx_primitives::decode_precommit;
 
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
@@ -327,7 +328,7 @@ impl RpcDataFetcher {
             signatures,
             num_authorities,
             block_number,
-            block_hash: self.get_block_hash(block_number).await,
+            block_hash: self.get_block_hash(block_number).await.0,
         }
     }
 

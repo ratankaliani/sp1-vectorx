@@ -1,5 +1,4 @@
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
-use alloy_sol_types:H256;
 use types::CircuitJustification;
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
@@ -21,7 +20,7 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
     // 2. Check encoding of precommit mesage
     // a) decode precommit
     // b) check that values from decoded precommit match passes in block number, block hash, and authority_set_id
-    (signed_block_hash, signed_block_number, _, signed_authority_set_id) = decode_precommit(&justification.signed_message);
+    let (signed_block_hash, signed_block_number, _, signed_authority_set_id) = decode_precommit(justification.signed_message);
     assert_eq!(signed_block_hash, justification.block_hash);
     assert_eq!(signed_block_number, justification.block_number);
     assert_eq!(signed_authority_set_id, authority_set_id);
@@ -49,12 +48,12 @@ pub fn compute_authority_set_commitment(
     commitment_so_far
 }
 
-pub fn decode_precommit(precommit: Vec<u8>) -> (H256, u32, u64, u64) {
+pub fn decode_precommit(precommit: Vec<u8>) -> ([u8; 32], u32, u64, u64) {
     // The first byte should be a 1.
     assert_eq!(precommit[0], 1);
 
     // The next 32 bytes are the block hash.
-    let block_hash = &precommit[1..33];
+    let block_hash: [u8; 32] = precommit[1..33].try_into().unwrap();
 
     // The next 4 bytes are the block number.
     let block_number = &precommit[33..37];
@@ -72,7 +71,7 @@ pub fn decode_precommit(precommit: Vec<u8>) -> (H256, u32, u64, u64) {
     let authority_set_id = u64::from_le_bytes(authority_set_id.try_into().unwrap());
 
     (
-        H256::from_slice(block_hash),
+        block_hash,
         block_number,
         round,
         authority_set_id,

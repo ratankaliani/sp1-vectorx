@@ -41,7 +41,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
     "bit-vec",
 ] }
 alloy-sol-types = "0.4.2"
-alloy-primitives = "0.4.2"
+alloy-primitives = "0.7.4"
 anyhow = "1.0.68"
 clap = "4.4.9"
 futures = "0.3.30"

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use ethers::types::H256;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct HeaderRotateData {
@@ -19,7 +18,7 @@ pub struct CircuitJustification {
     pub num_authorities: usize,
     pub current_authority_set_hash: Vec<u8>,
     pub block_number: u32,
-    pub block_hash: H256,
+    pub block_hash: [u8; 32],
 }
 
 #[derive(Debug, Deserialize, Serialize)]
