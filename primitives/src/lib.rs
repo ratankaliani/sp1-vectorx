@@ -4,7 +4,7 @@ use types::CircuitJustification;
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 use sp1_vectorx_script::decode_precommit;
-use sp1-vectorx-rotate-program::compute_authority_set_commitment;
+use sp1_vectorx_rotate_program::compute_authority_set_commitment;
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid
 pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
