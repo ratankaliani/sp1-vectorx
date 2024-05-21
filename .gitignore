@@ -21,3 +21,6 @@ pgo-data.profdata
 /target
 
 .env
+
+# vscode debug config
+.vscode/launch.json
