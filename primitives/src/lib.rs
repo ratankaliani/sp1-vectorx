@@ -72,7 +72,7 @@ mod tests {
         let encoded_nums: Vec<Vec<u8>> = nums.iter().map(|num| Compact(*num).encode()).collect();
         let zipped: Vec<(&Vec<u8>, &u32)> = encoded_nums.iter().zip(nums.iter()).collect();
         for (encoded_num, num) in zipped {
-            let (value, byte_count) = decode_scale_compact_int(encoded_num);
+            let (value, _) = decode_scale_compact_int(encoded_num);
             assert_eq!(value, *num as u64);
         }
     }
