@@ -23,7 +23,7 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
     // 2. Check encoding of precommit mesage
     // a) decode precommit
     // b) check that values from decoded precommit match passes in block number, block hash, and authority_set_id
-    let (signed_block_hash, signed_block_number, _, signed_authority_set_id) = decode_precommit(justification.signed_message.clone);
+    let (signed_block_hash, signed_block_number, _, signed_authority_set_id) = decode_precommit(justification.signed_message.clone());
     assert_eq!(signed_block_hash, justification.block_hash);
     assert_eq!(signed_block_number, justification.block_number);
     assert_eq!(signed_authority_set_id, authority_set_id);
@@ -31,12 +31,28 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
     // 3. Check that the signed message is signed by the correct authority
     assert_eq!(justification.pubkeys.len(), justification.signatures.len());
 
+    // two is added to account for rounding in case the number of authorities is not divisible by 3
+    let threshold = (2 * justification.pubkeys.len() + 2) / 3;
+    let mut verified_signatures = 0;
+    
     for i in 0..justification.pubkeys.len() {
-        if justification.signatures[i].is_some() {
-            let signature: &[u8; 64] = justification.signatures[i].as_ref().unwrap().as_slice().try_into().unwrap();
+        if let Some(signature) = &justification.signatures[i] {
+            let signature: &[u8; 64] = signature.as_slice().try_into().unwrap();
             verify_signature(&justification.pubkeys[i], &justification.signed_message, signature);
+            verified_signatures += 1;
+    
+            // Exit the loop early if 2/3 of signatures are verified
+            if verified_signatures >= threshold {
+                break;
+            }
         }
     }
+    
+    // Check if at least 2/3 of the signatures are verified
+    assert!(
+        verified_signatures >= threshold,
+        "Less than 2/3 of signatures are verified"
+    );
 }   
 
 /// Compute the new authority set hash.
