@@ -347,6 +347,7 @@ impl RpcDataFetcher {
         if total_votes * 3 < num_authorities * 2 {
             panic!("Not enough voting power");
         }
+
         CircuitJustification {
             signed_message,
             authority_set_id,
@@ -354,6 +355,8 @@ impl RpcDataFetcher {
             pubkeys: authorities.clone(),
             signatures,
             num_authorities,
+            block_number,
+            block_hash: self.get_block_hash(block_number).await.0.to_vec(),
         }
     }
 

@@ -17,6 +17,8 @@ pub struct CircuitJustification {
     pub signatures: Vec<Option<Vec<u8>>>,
     pub num_authorities: usize,
     pub current_authority_set_hash: Vec<u8>,
+    pub block_number: u32,
+    pub block_hash: Vec<u8>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
