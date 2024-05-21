@@ -5,7 +5,7 @@ use sha2::{Digest as Sha256Digest, Sha256};
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid
 pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
-    let pubkey = VerifyingKey::from_bytes(pubkey_bytes).unwrap();
+    let pubkey: VerifyingKey = VerifyingKey::from_bytes(pubkey_bytes).unwrap();
     let verified = pubkey.verify(signed_message, &Signature::from_bytes(signature));
     if verified.is_err() {
         panic!("Signature is not valid");
@@ -15,8 +15,11 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
 // Verify a simple justification on a block from the specified authority set
 pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, authority_set_hash: Vec<u8>) {
     // 1. Justification is untrusted and must be linked to verified authority set hash
-    let commitment = compute_authority_set_commitment(justification.num_authorities, justification.pubkeys);
-    
+    let computed_authority_set_commitment = compute_authority_set_commitment(justification.num_authorities, justification.pubkeys.clone());
+   
+    // Verify the authority set commitment is valid.
+    assert_eq!(computed_authority_set_commitment, authority_set_hash);
+
     // 2. Check encoding of precommit mesage
     // a) decode precommit
     // b) check that values from decoded precommit match passes in block number, block hash, and authority_set_id
@@ -26,6 +29,9 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
     assert_eq!(signed_authority_set_id, authority_set_id);
 
     // 3. Check that the signed message is signed by the correct authority
+    // println!("booga");
+    // println!("{}", justification.pubkeys.len());
+    // println!("{}", justification.signatures.len());
 
 }   
 

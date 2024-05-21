@@ -9232,6 +9232,7 @@ dependencies = [
  "clap 4.5.4",
  "dotenv",
  "ed25519-dalek",
+ "hex",
  "parity-scale-codec",
  "serde",
  "sha2 0.10.8",

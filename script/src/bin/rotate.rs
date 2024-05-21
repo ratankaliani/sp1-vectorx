@@ -19,7 +19,7 @@ async fn main() {
     // Fetch the authority set hash for the specified authority set id.
     // TODO: In the future, this will be read from the contract, along with the epoch end block number.
     let authority_set_hash = fetcher
-        .compute_authority_set_hash(epoch_end_block - 1)
+        .compute_authority_set_hash(epoch_end_block)
         .await;
 
     // Fetch the justification for the epoch end block of the specified authority set id.
@@ -39,11 +39,11 @@ async fn main() {
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ROTATE_ELF);
     let mut proof = client.prove(&pk, stdin).expect("proving failed");
-    
+
     // Read outputs.    
     let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
     let new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
-
+\
     // Verify proof.
     client.verify(&proof, &vk).expect("verification failed");
 
