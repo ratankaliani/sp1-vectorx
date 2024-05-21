@@ -25,26 +25,8 @@ pub fn main() {
         .expect("Failed to convert hash to bytes32");
 
     // Verify simple justification, panics if fails
-    verify_simple_justification(justification.block_number, justification.block_hash, current_authority_set_id, current_authority_set_hash);
+    verify_simple_justification(justification, current_authority_set_id, current_authority_set_hash);
 
     sp1_zkvm::io::commit_slice(&new_authority_set_hash_bytes32);
 }
 
-/// Compute the new authority set hash.
-fn compute_authority_set_commitment(
-    num_active_authorities: usize,
-    pubkeys: Vec<[u8; 32]>,
-) -> Vec<u8> {
-    assert!(
-        num_active_authorities > 0,
-        "There must be at least one authority"
-    );
-    let mut commitment_so_far = Sha256::digest(pubkeys[0]).to_vec();
-    for pubkey in pubkeys.iter().skip(1) {
-        let mut input_to_hash = Vec::new();
-        input_to_hash.extend_from_slice(&commitment_so_far);
-        input_to_hash.extend_from_slice(pubkey);
-        commitment_so_far = Sha256::digest(&input_to_hash).to_vec();
-    }
-    commitment_so_far
-}

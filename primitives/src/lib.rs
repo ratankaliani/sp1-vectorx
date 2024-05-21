@@ -1,6 +1,8 @@
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use ethers::types::H256;
+use types::CircuitJustification;
 pub mod types;
+
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid
 pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
@@ -9,15 +11,42 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
     if verified.is_err() {
         panic!("Signature is not valid");
     }
+    
+/// Compute the new authority set hash.
+fn compute_authority_set_commitment(
+    num_active_authorities: usize,
+    pubkeys: Vec<[u8; 32]>,
+) -> Vec<u8> {
+    assert!(
+        num_active_authorities > 0,
+        "There must be at least one authority"
+    );
+    let mut commitment_so_far = Sha256::digest(pubkeys[0]).to_vec();
+    for pubkey in pubkeys.iter().skip(1) {
+        let mut input_to_hash = Vec::new();
+        input_to_hash.extend_from_slice(&commitment_so_far);
+        input_to_hash.extend_from_slice(pubkey);
+        commitment_so_far = Sha256::digest(&input_to_hash).to_vec();
+    }
+    commitment_so_far
 }
 
 // Verify a simple justification on a block from the specified authority set
-pub fn verify_simple_justification(block_number: u32, block_hash: H256, authority_set_id: u64, authority_set_hash: Vec<u8>) {
-    // 1. check encoding of precommit mesage
+pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, authority_set_hash: Vec<u8>) {
+    // 1. Justification is untrusted and must be linked to verified authority set hash
+    let commitment = compute_authority_set_commitment(justification.num_authorities, justification.pubkeys);
+    
+    // 2. Check encoding of precommit mesage
     // a) decode precommit
     // b) check that values from decoded precommit match passes in block number, block hash, and authority_set_id
+    (signed_block_hash, signed_block_number, _, signed_authority_set_id) = decode_precommit(&justification.signed_message);
+    assert_eq!(signed_block_hash, justification.block_hash);
+    assert_eq!(signed_block_number, justification.block_number);
+    assert_eq!(signed_authority_set_id, authority_set_id);
 
-}
+    // 3. Check that the signed message is signed by the correct authority
+
+}   
 
 
 /// Decode a SCALE-encoded compact int.

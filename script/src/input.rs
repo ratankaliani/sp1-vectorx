@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
-
+use ethers:types::H256;
 use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
 
 use avail_subxt::avail_client::AvailClient;
@@ -15,7 +15,7 @@ use avail_subxt::config::substrate::DigestItem;
 use avail_subxt::primitives::Header;
 use avail_subxt::{api, RpcParams};
 use codec::{Compact, Decode, Encode};
-use ethers::types::H256;
+
 use futures::future::join_all;
 use sha2::{Digest, Sha256};
 use sp_core::{ed25519, Pair};
