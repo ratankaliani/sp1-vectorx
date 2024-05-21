@@ -1,4 +1,8 @@
 use anyhow::Result;
+use ed25519_dalek::Signature;
+use ed25519_dalek::Verifier;
+use ed25519_dalek::VerifyingKey;
+use sp1_vectorx_primitives::verify_signature;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
@@ -303,7 +307,7 @@ impl RpcDataFetcher {
         justification: GrandpaJustification,
         block_number: u32,
     ) -> CircuitJustification {
-        let authority_set_id = self.get_authority_set_id(block_number).await;
+        let authority_set_id = self.get_authority_set_id(block_number - 1).await;
 
         // Form a message which is signed in the justification.
         let signed_message = Encode::encode(&(
@@ -315,17 +319,17 @@ impl RpcDataFetcher {
         // List of valid pubkeys to signatures from the justification.
         let mut pubkey_to_signature = HashMap::new();
         for precommit in justification.commit.precommits {
-            let is_ok = <ed25519::Pair as Pair>::verify(
-                &precommit.clone().signature,
-                signed_message.as_slice(),
-                &precommit.clone().id,
+            let pubkey = precommit.clone().id;
+            let signature = precommit.clone().signature.0;
+            let pubkey_bytes = pubkey.0;
+
+            // Verify the signature by this validator over the signed_message which is shared.
+            verify_signature(&pubkey_bytes, &signed_message, &signature);
+
+            pubkey_to_signature.insert(
+                precommit.clone().id.0,
+                precommit.clone().signature.0.to_vec(),
             );
-            if is_ok {
-                pubkey_to_signature.insert(
-                    precommit.clone().id.0,
-                    precommit.clone().signature.0.to_vec(),
-                );
-            }
         }
 
         // Get the authority set for the block number.
@@ -657,13 +661,13 @@ mod tests {
         let previous_authority_set_id = fetcher
             .get_authority_set_id(epoch_end_block_number - 1)
             .await;
-        let authority_set_id = fetcher.get_authority_set_id(epoch_end_block_number).await;
+        let new_authority_set_id = fetcher.get_authority_set_id(epoch_end_block_number).await;
 
         // Verify this is an epoch end block.
-        assert_eq!(previous_authority_set_id + 1, authority_set_id);
+        assert_eq!(previous_authority_set_id + 1, new_authority_set_id);
         assert_eq!(previous_authority_set_id, target_authority_set_id);
 
-        let rotate_data = fetcher.get_header_rotate(authority_set_id).await;
+        let rotate_data = fetcher.get_header_rotate(new_authority_set_id).await;
         println!(
             "new authority set hash {:?}",
             rotate_data.new_authority_set_hash

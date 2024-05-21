@@ -53,6 +53,8 @@ impl<'de> Deserialize<'de> for GrandpaJustification {
 
 #[derive(Debug, Encode)]
 pub enum SignerMessage {
+    #[allow(dead_code)]
+    DummyMessage(u32),
     PrecommitMessage(Precommit),
 }
 
