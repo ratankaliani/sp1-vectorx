@@ -13,7 +13,7 @@ async fn main() {
 
     // Supply an initial authority set id.
     // TODO: Read from args/contract in the future. Set to 1 for testing.
-    let authority_set_id = 1u64;
+    let authority_set_id = 10u64;
     let epoch_end_block = fetcher.last_justified_block(authority_set_id).await;
 
     // Fetch the authority set hash for the specified authority set id.
