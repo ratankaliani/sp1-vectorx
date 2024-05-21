@@ -77,6 +77,7 @@ pub fn main() {
     );
 }
 
+/// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
     let parent_hash = header_bytes[..32].to_vec();
 
