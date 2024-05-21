@@ -43,7 +43,7 @@ async fn main() {
     // Read outputs.    
     let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
     let new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
-\
+
     // Verify proof.
     client.verify(&proof, &vk).expect("verification failed");
 
