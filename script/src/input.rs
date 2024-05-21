@@ -119,6 +119,7 @@ impl RpcDataFetcher {
             .legacy_rpc()
             .chain_get_block_hash(Some(block_number.into()))
             .await;
+    
         block_hash.unwrap().unwrap()
     }
 

@@ -16,9 +16,14 @@ pub fn main() {
     let current_authority_set_hash = sp1_zkvm::io::read::<Vec<u8>>();
     let justification = sp1_zkvm::io::read::<CircuitJustification>();
     let header_rotate_data = sp1_zkvm::io::read::<HeaderRotateData>();
-
-    let computed_hash = compute_authority_set_commitment(justification.num_authorities, justification.pubkeys);
-    assert_eq!(current_authority_set_hash, computed_hash);
+    // println!("{}",current_authority_set_hash.len());
+    // let current_authority_set_hash_bytes32: [u8; 32] = current_authority_set_hash.try_into().expect("Failed to convert hash to bytes32");
+    // println!("Current authority set id: {}", current_authority_set_id);
+    // println!("Current authority set hash: {:?}", current_authority_set_hash_bytes32);
+    
+    let new_authority_set_hash: Vec<u8> = compute_authority_set_commitment(justification.num_authorities, justification.pubkeys);
+    let new_authority_set_hash_bytes32: [u8; 32] = new_authority_set_hash.try_into().expect("Failed to convert hash to bytes32");
+    sp1_zkvm::io::commit(&new_authority_set_hash_bytes32);
 }
 
 fn compute_authority_set_commitment(num_active_authorities: usize, pubkeys: Vec<[u8; 32]>) -> Vec<u8> {
