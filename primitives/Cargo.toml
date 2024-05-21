@@ -5,8 +5,6 @@ name = "sp1-vectorx-primitives"
 edition = "2021"
 
 [dependencies]
-sp1-vectorx-script = { path = "../script" }
-sp1-vectorx-rotate-program = {path = "../rotate"}
 serde = { version = "1", features = ["derive"] }
 dotenv = "0.15.0"
 sha2 = { version = "0.10.8", default-features = false }
@@ -14,4 +12,3 @@ anyhow = "1.0.68"
 clap = "4.4.9"
 ed25519-dalek = "2.1.1"
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
-ethers = "2.0.14"

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
 use ethers:types::H256;
-use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
+use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData}, decode_precommit;
 
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
@@ -23,6 +23,7 @@ use sp_core::{ed25519, Pair};
 use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 
+
 // Compute the chained hash of the authority set.
 pub fn compute_authority_set_hash(authorities: &[[u8; 32]]) -> Vec<u8> {
     let mut hash_so_far = Vec::new();
@@ -33,36 +34,6 @@ pub fn compute_authority_set_hash(authorities: &[[u8; 32]]) -> Vec<u8> {
         hash_so_far = hasher.finalize().to_vec();
     }
     hash_so_far
-}
-
-pub fn decode_precommit(precommit: Vec<u8>) -> (H256, u32, u64, u64) {
-    // The first byte should be a 1.
-    assert_eq!(precommit[0], 1);
-
-    // The next 32 bytes are the block hash.
-    let block_hash = &precommit[1..33];
-
-    // The next 4 bytes are the block number.
-    let block_number = &precommit[33..37];
-    // Convert the block number to a u32.
-    let block_number = u32::from_le_bytes(block_number.try_into().unwrap());
-
-    // The next 8 bytes are the justification round.
-    let round = &precommit[37..45];
-    // Convert the round to a u64.
-    let round = u64::from_le_bytes(round.try_into().unwrap());
-
-    // The next 8 bytes are the authority set id.
-    let authority_set_id = &precommit[45..53];
-    // Convert the authority set id to a u64.
-    let authority_set_id = u64::from_le_bytes(authority_set_id.try_into().unwrap());
-
-    (
-        H256::from_slice(block_hash),
-        block_number,
-        round,
-        authority_set_id,
-    )
 }
 
 pub struct RpcDataFetcher {
