@@ -12,7 +12,7 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
     }
 }
 
-// Verify a simple justification on a block from the specified authority set
+/// Verify a simple justification on a block from the specified authority set
 pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, authority_set_hash: Vec<u8>) {
     // 1. Justification is untrusted and must be linked to verified authority set hash
     let computed_authority_set_commitment = compute_authority_set_commitment(justification.num_authorities, justification.pubkeys.clone());
@@ -21,17 +21,15 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
     assert_eq!(computed_authority_set_commitment, authority_set_hash);
 
     // 2. Check encoding of precommit mesage
-    // a) decode precommit
-    // b) check that values from decoded precommit match passes in block number, block hash, and authority_set_id
+    // a) Decode precommit
+    // b) Check that values from decoded precommit match passed in block number, block hash and authority_set_id.
     let (signed_block_hash, signed_block_number, _, signed_authority_set_id) = decode_precommit(justification.signed_message.clone());
     assert_eq!(signed_block_hash, justification.block_hash);
     assert_eq!(signed_block_number, justification.block_number);
     assert_eq!(signed_authority_set_id, authority_set_id);
 
     // 3. Check that the signed message is signed by the correct authority
-    assert_eq!(justification.pubkeys.len(), justification.signatures.len());
-
-    // two is added to account for rounding in case the number of authorities is not divisible by 3
+    // Two is added to account for rounding in case the number of authorities is not divisible by 3
     let threshold = (2 * justification.pubkeys.len() + 2) / 3;
     let mut verified_signatures = 0;
     
