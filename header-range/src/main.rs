@@ -13,6 +13,13 @@ use sp1_vectorx_primitives::{
 pub fn main() {
     let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
 
+    // Commit to the input data.
+    sp1_zkvm::io::commit(&request_data.trusted_block);
+    sp1_zkvm::io::commit(&request_data.trusted_header_hash);
+    sp1_zkvm::io::commit(&request_data.authority_set_id);
+    sp1_zkvm::io::commit(&request_data.authority_set_hash);
+    sp1_zkvm::io::commit(&request_data.target_block);
+
     let mut encoded_headers = Vec::new();
     // Read the encoded headers.
     for _ in 0..request_data.target_block - request_data.trusted_block + 1 {
@@ -44,7 +51,15 @@ pub fn main() {
         header_hashes.push(res.to_vec());
     }
 
+    // Assert the first header hash matches the trusted header hash.
+    assert_eq!(header_hashes[0], request_data.trusted_header_hash);
+    assert_eq!(
+        decoded_headers_data[0].block_number,
+        request_data.trusted_block
+    );
+
     // Stage 2: Verify the chain of headers is connected from the trusted block to the target block.
+    // Do this by checking the parent hashes are linked and the block numbers are sequential.
     for i in 1..(request_data.target_block - request_data.trusted_block + 1) as usize {
         // Check the parent hashes are linked.
         assert_eq!(header_hashes[i - 1], decoded_headers_data[i].parent_hash);
@@ -54,6 +69,11 @@ pub fn main() {
             decoded_headers_data[i].block_number
         );
     }
+
+    assert_eq!(
+        decoded_headers_data[decoded_headers_data.len() - 1].block_number,
+        request_data.target_block
+    );
 }
 
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
