@@ -11,7 +11,8 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
     if verified.is_err() {
         panic!("Signature is not valid");
     }
-    
+}
+
 /// Compute the new authority set hash.
 fn compute_authority_set_commitment(
     num_active_authorities: usize,
