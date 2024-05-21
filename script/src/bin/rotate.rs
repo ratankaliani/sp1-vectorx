@@ -40,10 +40,9 @@ async fn main() {
     let (pk, vk) = client.setup(ROTATE_ELF);
     let mut proof = client.prove(&pk, stdin).expect("proving failed");
     
-    // Read outputs.
+    // Read outputs.    
     let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
     let new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
-    println!("New authority set hash: {}", new_authority_set_hash);
 
     // Verify proof.
     client.verify(&proof, &vk).expect("verification failed");
