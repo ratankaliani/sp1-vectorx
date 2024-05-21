@@ -356,7 +356,7 @@ impl RpcDataFetcher {
             signatures,
             num_authorities,
             block_number,
-            block_hash: self.get_block_hash(block_number).await.0.to_vec(),
+            block_hash: self.get_block_hash(block_number).await,
         }
     }
 

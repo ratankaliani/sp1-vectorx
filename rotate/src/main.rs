@@ -9,7 +9,7 @@ use blake2::{Blake2b512, Digest};
 use ed25519_consensus::{Signature, VerificationKey};
 use sha2::{Digest as Sha256Digest, Sha256};
 
-use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
+use sp1_vectorx_primitives::{types::{CircuitJustification, HeaderRotateData}, verify_simple_justification};
 
 pub fn main() {
     let current_authority_set_id = sp1_zkvm::io::read::<u64>();
@@ -23,6 +23,10 @@ pub fn main() {
     let new_authority_set_hash_bytes32: [u8; 32] = new_authority_set_hash
         .try_into()
         .expect("Failed to convert hash to bytes32");
+
+    // Verify simple justification, panics if fails
+    verify_simple_justification(justification.block_number, justification.block_hash, current_authority_set_id, current_authority_set_hash);
+
     sp1_zkvm::io::commit_slice(&new_authority_set_hash_bytes32);
 }
 

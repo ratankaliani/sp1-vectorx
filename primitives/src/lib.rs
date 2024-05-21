@@ -1,5 +1,5 @@
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
-
+use ethers::types::H256;
 pub mod types;
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid
@@ -10,6 +10,15 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
         panic!("Signature is not valid");
     }
 }
+
+// Verify a simple justification on a block from the specified authority set
+pub fn verify_simple_justification(block_number: u32, block_hash: H256, authority_set_id: u64, authority_set_hash: Vec<u8>) {
+    // 1. check encoding of precommit mesage
+    // a) decode precommit
+    // b) check that values from decoded precommit match passes in block number, block hash, and authority_set_id
+
+}
+
 
 /// Decode a SCALE-encoded compact int.
 pub fn decode_scale_compact_int(bytes: &[u8]) -> (u64, usize) {
