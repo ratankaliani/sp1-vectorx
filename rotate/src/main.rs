@@ -20,7 +20,7 @@ pub fn main() {
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash: Vec<u8> = compute_authority_set_commitment(justification.num_authorities, justification.pubkeys);
     let new_authority_set_hash_bytes32: [u8; 32] = new_authority_set_hash.try_into().expect("Failed to convert hash to bytes32");
-    sp1_zkvm::io::commit(&new_authority_set_hash_bytes32);
+    sp1_zkvm::io::commit_slice(&new_authority_set_hash_bytes32);
 }
 
 fn compute_authority_set_commitment(num_active_authorities: usize, pubkeys: Vec<[u8; 32]>) -> Vec<u8> {
