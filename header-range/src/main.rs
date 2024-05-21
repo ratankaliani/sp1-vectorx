@@ -70,6 +70,7 @@ pub fn main() {
         );
     }
 
+    // Check that the last header matches the target block.
     assert_eq!(
         decoded_headers_data[decoded_headers_data.len() - 1].block_number,
         request_data.target_block
