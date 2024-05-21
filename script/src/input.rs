@@ -119,6 +119,7 @@ impl RpcDataFetcher {
             .legacy_rpc()
             .chain_get_block_hash(Some(block_number.into()))
             .await;
+    
         block_hash.unwrap().unwrap()
     }
 
@@ -343,7 +344,6 @@ impl RpcDataFetcher {
         }
         // Total votes is the total number of entries in pubkey_to_signature.
         let total_votes = pubkey_to_signature.len();
-
         if total_votes * 3 < num_authorities * 2 {
             panic!("Not enough voting power");
         }

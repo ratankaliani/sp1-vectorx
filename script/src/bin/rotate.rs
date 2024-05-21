@@ -13,7 +13,7 @@ async fn main() {
 
     // Supply an initial authority set id.
     // TODO: Read from args/contract in the future. Set to 1 for testing.
-    let authority_set_id = 10u64;
+    let authority_set_id = 71u64;
     let epoch_end_block = fetcher.last_justified_block(authority_set_id).await;
 
     // Fetch the authority set hash for the specified authority set id.
@@ -38,7 +38,11 @@ async fn main() {
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ROTATE_ELF);
-    let proof = client.prove(&pk, stdin).expect("proving failed");
+    let mut proof = client.prove(&pk, stdin).expect("proving failed");
+    
+    // Read outputs.    
+    let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
+    let new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
 
     // Verify proof.
     client.verify(&proof, &vk).expect("verification failed");
