@@ -3,7 +3,7 @@ use types::CircuitJustification;
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 
-/// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid
+/// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid.
 pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
     let pubkey: VerifyingKey = VerifyingKey::from_bytes(pubkey_bytes).unwrap();
     let verified = pubkey.verify(signed_message, &Signature::from_bytes(signature));
@@ -12,10 +12,10 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
     }
 }
 
-/// Verify a simple justification on a block from the specified authority set
-pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, current_authority_set_hash: Vec<u8>, new_authority_set_hash: Vec<u8>) {
+/// Verify a simple justification on a block from the specified authority set.
+pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, new_authority_set_hash: Vec<u8>) {
     // 1. Verify the authority set commitment is valid.
-    assert_eq!(current_authority_set_hash, new_authority_set_hash);
+    assert_eq!(justification.current_authority_set_hash, new_authority_set_hash);
 
     // 2. Check encoding of precommit mesage.
     // a) Decode precommit.
@@ -36,18 +36,14 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
             verify_signature(&justification.pubkeys[i], &justification.signed_message, &signature);
             verified_signatures += 1;
     
-            // Exit the loop early if 2/3 of signatures are verified
-            if verified_signatures >= threshold {
+            // Exit the loop early if more than 2/3 of signatures are verified.
+            if verified_signatures > threshold {
                 break;
             }
         }
     }
     
-    // Check if more than 2/3 of the signatures are verified.
-    assert!(
-        verified_signatures > threshold,
-        "Less than 2/3 of signatures are verified"
-    );
+    assert!(verified_signatures > threshold, "Less than 2/3 of signatures are verified");
 }   
 
 /// Compute the new authority set hash.

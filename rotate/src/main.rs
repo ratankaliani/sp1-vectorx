@@ -22,8 +22,7 @@ pub fn main() {
         .try_into()
         .expect("Failed to convert hash to bytes32");
 
-    // Verify simple justification, panics if fails
-    verify_simple_justification(justification, current_authority_set_id, current_authority_set_hash, new_authority_set_hash);
+    verify_simple_justification(justification, current_authority_set_id, new_authority_set_hash);
 
     sp1_zkvm::io::commit_slice(&new_authority_set_hash_bytes32);
 }
