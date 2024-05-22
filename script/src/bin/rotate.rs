@@ -69,7 +69,6 @@ mod tests {
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
     async fn test_compute_authority_set_commitment() {
-        // Generate & proof as usual.
         let fetcher = RpcDataFetcher::new().await;
 
         let authority_set_id = 71u64;
