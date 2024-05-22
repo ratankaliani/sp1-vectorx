@@ -3,11 +3,11 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
-use blake2::{Blake2b512, Digest};
+use blake2::{Blake2b512, Blake2s256, Digest};
 
 use sp1_vectorx_primitives::{
     decode_scale_compact_int,
-    types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData},
+    types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData}, verify_simple_justification,
 };
 
 pub fn main() {
@@ -45,7 +45,7 @@ pub fn main() {
     // Hash the headers.
     let mut header_hashes = Vec::new();
     for header_bytes in encoded_headers {
-        let mut hasher = Blake2b512::new();
+        let mut hasher = Blake2s256::new();
         hasher.update(header_bytes);
         let res = hasher.finalize();
         header_hashes.push(res.to_vec());
@@ -75,6 +75,9 @@ pub fn main() {
         decoded_headers_data[decoded_headers_data.len() - 1].block_number,
         request_data.target_block
     );
+
+    // Stage 3: Verify the justification is valid.
+    verify_simple_justification(target_justification, request_data.authority_set_id, Vec::from(request_data.authority_set_hash))
 }
 
 /// Decode the header into a DecodedHeaderData struct.
