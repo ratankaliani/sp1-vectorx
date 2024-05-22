@@ -13,9 +13,9 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
 }
 
 /// Verify a simple justification on a block from the specified authority set.
-pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, new_authority_set_hash: Vec<u8>) {
+pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, current_authority_set_hash: Vec<u8>) {
     // 1. Verify the authority set commitment is valid.
-    assert_eq!(justification.current_authority_set_hash, new_authority_set_hash);
+    assert_eq!(justification.current_authority_set_hash, current_authority_set_hash);
 
     // 2. Check encoding of precommit mesage.
     // a) Decode precommit.
@@ -27,7 +27,7 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
 
     // 3. Check that the signed message is signed by the correct authority.
     // Must have at least 2/3 of the signatures to verify the justification.
-    let threshold = justification.pubkeys.len().div_ceil(3);
+    let threshold = (justification.pubkeys.len() * 2).div_ceil(3);
     let mut verified_signatures = 0;
     
     for i in 0..justification.pubkeys.len() {

@@ -2,6 +2,7 @@
 
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_script::input::RpcDataFetcher;
+use sp1_vectorx_primitives::types::RotateInput;
 
 const ROTATE_ELF: &[u8] = include_bytes!("../../../rotate/elf/riscv32im-succinct-zkvm-elf");
 
@@ -19,7 +20,7 @@ async fn main() {
     // Fetch the authority set hash for the specified authority set id.
     // TODO: In the future, this will be read from the contract, along with the epoch end block number.
     let authority_set_hash = fetcher
-        .compute_authority_set_hash(epoch_end_block)
+        .compute_authority_set_hash(epoch_end_block-1)
         .await;
 
     // Fetch the justification for the epoch end block of the specified authority set id.
@@ -31,10 +32,13 @@ async fn main() {
 
     // Generate proof.
     let mut stdin = SP1Stdin::new();
-    stdin.write(&authority_set_id);
-    stdin.write(&authority_set_hash);
-    stdin.write(&justification);
-    stdin.write(&header_rotate_data);
+    let rotate_input = RotateInput {
+        current_authority_set_id: authority_set_id,
+        current_authority_set_hash: authority_set_hash.0.to_vec(),
+        justification,
+        header_rotate_data,
+    };
+    stdin.write(&rotate_input);
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ROTATE_ELF);
