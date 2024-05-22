@@ -31,9 +31,9 @@ sha256 = "1.4.0"
 primitive-types = "0.12.1"
 
 dotenv = "0.15.0"
-avail-subxt = { git = "https://github.com/availproject/avail.git", tag = "v2.0.0.0-rc4" }
+avail-subxt = { git = "https://github.com/availproject/avail.git", tag = "v2.2.2.0-rc1" }
 subxt = "0.34"
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-2", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5", default-features = false }
 sha2 = { version = "0.10.8", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
     "derive",
@@ -48,6 +48,15 @@ futures = "0.3.30"
 async-trait = "0.1.77"
 ed25519-dalek = "2.1.1"
 ethers = "2.0.14"
+rust-crypto = "0.2"
+
 
 [build-dependencies]
 sp1-helper = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }
+
+# Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
+[patch.crates-io]
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }

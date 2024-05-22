@@ -1,5 +1,7 @@
 //! A simple script to generate and verify the proof of a given program.
 
+use crypto::{blake2b::Blake2b, digest::Digest};
+
 use codec::Encode;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
@@ -17,7 +19,8 @@ async fn main() {
 
     // TODO: Update this to read from args/on-chain.
     let head = fetcher.get_head().await;
-    let trusted_block = head.number - 10;
+    let trusted_block = 238000;
+    println!("Trusted block: {}", trusted_block);
 
     let trusted_header = fetcher.get_header(trusted_block).await;
     let trusted_header_hash = trusted_header.hash();
@@ -33,6 +36,17 @@ async fn main() {
         .get_block_headers_range(trusted_block, target_block)
         .await;
     let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
+
+    // TODO(remove): Sanity check that trusted header hash matches the encoded header when hashed.
+    const DIGEST_SIZE: usize = 32;
+    let mut hasher = Blake2b::new(DIGEST_SIZE);
+    hasher.input(encoded_headers[0].as_slice());
+
+    let mut digest_bytes = [0u8; DIGEST_SIZE];
+    hasher.result(&mut digest_bytes);
+
+    assert_eq!(headers[0].hash().0.to_vec(), trusted_header_hash.0.to_vec());
+    assert_eq!(trusted_header_hash.0.to_vec(), digest_bytes.to_vec());
 
     // Generate proof.
     let mut stdin = SP1Stdin::new();

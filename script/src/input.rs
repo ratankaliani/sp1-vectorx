@@ -1,15 +1,11 @@
 use anyhow::Result;
-use ed25519_dalek::Signature;
-use ed25519_dalek::Verifier;
-use ed25519_dalek::VerifyingKey;
+use ethers::types::H256;
+use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
 use sp1_vectorx_primitives::verify_signature;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
-use ethers::types::H256;
-use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
-use sp1_vectorx_primitives::decode_precommit;
 
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
@@ -19,11 +15,10 @@ use codec::{Compact, Decode, Encode};
 
 use futures::future::join_all;
 use sha2::{Digest, Sha256};
-use sp_core::{ed25519, Pair};
+use sp_core::ed25519;
 
 use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
-
 
 // Compute the chained hash of the authority set.
 pub fn compute_authority_set_hash(authorities: &[[u8; 32]]) -> Vec<u8> {
@@ -91,7 +86,7 @@ impl RpcDataFetcher {
             .legacy_rpc()
             .chain_get_block_hash(Some(block_number.into()))
             .await;
-    
+
         block_hash.unwrap().unwrap()
     }
 
@@ -495,6 +490,7 @@ impl RpcDataFetcher {
 #[cfg(test)]
 mod tests {
     use avail_subxt::config::Header;
+    use sp1_vectorx_primitives::decode_precommit;
 
     use super::*;
 

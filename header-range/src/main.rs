@@ -3,11 +3,12 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
-use blake2::{Blake2b512, Blake2s256, Digest};
-
+use blake2::digest::{Update, VariableOutput};
+use blake2::Blake2bVar;
 use sp1_vectorx_primitives::{
     decode_scale_compact_int,
-    types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData}, verify_simple_justification,
+    types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData},
+    verify_simple_justification,
 };
 
 pub fn main() {
@@ -45,10 +46,13 @@ pub fn main() {
     // Hash the headers.
     let mut header_hashes = Vec::new();
     for header_bytes in encoded_headers {
-        let mut hasher = Blake2s256::new();
-        hasher.update(header_bytes);
-        let res = hasher.finalize();
-        header_hashes.push(res.to_vec());
+        const DIGEST_SIZE: usize = 32;
+        let mut hasher = Blake2bVar::new(DIGEST_SIZE).unwrap();
+        hasher.update(header_bytes.as_slice());
+
+        let mut digest_bytes = [0u8; DIGEST_SIZE];
+        let _ = hasher.finalize_variable(&mut digest_bytes);
+        header_hashes.push(digest_bytes.to_vec());
     }
 
     // Assert the first header hash matches the trusted header hash.
@@ -77,7 +81,11 @@ pub fn main() {
     );
 
     // Stage 3: Verify the justification is valid.
-    verify_simple_justification(target_justification, request_data.authority_set_id, Vec::from(request_data.authority_set_hash))
+    verify_simple_justification(
+        target_justification,
+        request_data.authority_set_id,
+        Vec::from(request_data.authority_set_hash),
+    )
 }
 
 /// Decode the header into a DecodedHeaderData struct.

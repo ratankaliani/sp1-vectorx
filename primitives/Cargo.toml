@@ -13,4 +13,3 @@ clap = "4.4.9"
 ed25519-dalek = "2.1.1"
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 hex = "0.4.3"
-
