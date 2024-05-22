@@ -22,7 +22,7 @@ use crate::redis::RedisClient;
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 
 // Compute the chained hash of the authority set.
-pub fn compute_authority_set_hash(authorities: &[[u8; 32]]) -> Vec<u8> {
+pub fn compute_authority_set_hash_from_authorities(authorities: &[[u8; 32]]) -> Vec<u8> {
     let mut hash_so_far = Vec::new();
     for authority in authorities {
         let mut hasher = sha2::Sha256::new();
@@ -265,9 +265,19 @@ impl RpcDataFetcher {
         authorities
     }
 
-    // Computes the authority_set_hash for a given block number. Note: This is the authority set hash
-    // that validates the next block after the given block number.
-    pub async fn compute_authority_set_hash(&self, block_number: u32) -> H256 {
+    /// Gets the authority set id and authority set hash that are defined in block_number. This authority set
+    /// attests to block_number + 1.
+    pub async fn get_authority_set_data_for_block(&self, block_number: u32) -> (u64, H256) {
+        let authority_set_id = self.get_authority_set_id(block_number).await;
+        let authority_set_hash = self
+            .compute_authority_set_hash_for_block(block_number)
+            .await;
+        (authority_set_id, authority_set_hash)
+    }
+
+    /// Computes the authority_set_hash for a given block number. Note: This is the authority set hash
+    /// that validates the next block after the given block number.
+    pub async fn compute_authority_set_hash_for_block(&self, block_number: u32) -> H256 {
         let authorities = self.get_authorities(block_number).await;
 
         let mut hash_so_far = Vec::new();
@@ -280,12 +290,16 @@ impl RpcDataFetcher {
         H256::from_slice(&hash_so_far)
     }
 
+    /// Get the justification data necessary for the circuit using GrandpaJustification and the block number.
     async fn compute_data_from_justification(
         &self,
         justification: GrandpaJustification,
         block_number: u32,
     ) -> CircuitJustification {
-        let authority_set_id = self.get_authority_set_id(block_number - 1).await;
+        // Get the authority set that attested to block_number.
+        let (authority_set_id, authority_set_hash) = self
+            .get_authority_set_data_for_block(block_number - 1)
+            .await;
 
         // Form a message which is signed in the justification.
         let signed_message = Encode::encode(&(
@@ -311,9 +325,8 @@ impl RpcDataFetcher {
         }
 
         // Get the authority set for the block number.
-        let authorities = self.get_authorities(block_number).await;
+        let authorities = self.get_authorities(block_number - 1).await;
         let num_authorities = authorities.len();
-        let current_authority_set_hash = compute_authority_set_hash(&authorities);
 
         let mut signatures = Vec::new();
         for authority in authorities.clone() {
@@ -329,7 +342,7 @@ impl RpcDataFetcher {
         CircuitJustification {
             signed_message,
             authority_set_id,
-            current_authority_set_hash,
+            current_authority_set_hash: authority_set_hash.0.to_vec(),
             pubkeys: authorities.clone(),
             signatures,
             num_authorities,
@@ -359,7 +372,7 @@ impl RpcDataFetcher {
             .get_authority_set_id(redis_justification.block_number - 1)
             .await;
         let authority_set_hash = self
-            .compute_authority_set_hash(redis_justification.block_number - 1)
+            .compute_authority_set_hash_for_block(redis_justification.block_number - 1)
             .await;
         let header = self.get_header(redis_justification.block_number).await;
 
@@ -540,7 +553,7 @@ impl RpcDataFetcher {
             );
         }
 
-        let new_authority_set_hash = compute_authority_set_hash(&new_authorities);
+        let new_authority_set_hash = compute_authority_set_hash_from_authorities(&new_authorities);
 
         HeaderRotateData {
             header_bytes,
@@ -561,102 +574,6 @@ mod tests {
 
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
-    async fn test_get_block_headers_range() {
-        let fetcher = RpcDataFetcher::new().await;
-        let _ = fetcher.get_block_headers_range(100000, 100256).await;
-
-        let (_, data_root_commitment) = fetcher
-            .get_merkle_root_commitments(256, 441000, 441001)
-            .await;
-
-        println!(
-            "data_root_commitment {:?}",
-            hex::encode(data_root_commitment)
-        );
-        // assert_eq!(headers.len(), 181);
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "ci", ignore)]
-    async fn test_get_block_hash() {
-        let fetcher = RpcDataFetcher::new().await;
-        let block_hash = fetcher.get_block_hash(70440).await;
-        println!("block hash {:?}", hex::encode(block_hash.0));
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "ci", ignore)]
-    async fn test_get_header_hash() {
-        let fetcher = RpcDataFetcher::new().await;
-
-        let target_block = 529000;
-        let header = fetcher.get_header(target_block).await;
-        // println!("header has hash {:?}", header.hash());
-        let authority_set_id = fetcher.get_authority_set_id(target_block - 1).await;
-        let authority_set_hash = fetcher.compute_authority_set_hash(target_block - 1).await;
-
-        // let _ = fetcher.get_block_hash(target_block).await;
-
-        println!("header hash {:?}", hex::encode(header.hash().0));
-        println!("authority set hash {:?}", hex::encode(authority_set_hash.0));
-        println!("authority set id {:?}", authority_set_id);
-
-        // let id_1 = fetcher.get_authority_set_id(target_block - 1).await;
-        // let authority_set_hash = fetcher.compute_authority_set_hash(target_block - 1).await;
-        // println!("authority set id {:?}", id_1);
-        // println!("authority set hash {:?}", hex::encode(authority_set_hash.0));
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "ci", ignore)]
-    async fn test_get_authority_set_id() {
-        let fetcher = RpcDataFetcher::new().await;
-        let mut block: u32 = 215000;
-
-        loop {
-            let authority_set_id = fetcher.get_authority_set_id(block).await;
-            println!("authority_set_id {:?}", authority_set_id);
-
-            let prev_epoch_end_block = fetcher.last_justified_block(authority_set_id - 1).await;
-            println!("prev end block {:?}", prev_epoch_end_block);
-            // The current authorities are defined in the last block of the previous epoch.
-            let curr_authorities = fetcher.get_authorities(prev_epoch_end_block).await;
-
-            let epoch_end_block = fetcher.last_justified_block(authority_set_id).await;
-            println!("curr end block {:?}", epoch_end_block);
-            // The next authority set is defined by the last block of the current epoch.
-            let next_authorities = fetcher.get_authorities(epoch_end_block).await;
-
-            if curr_authorities.len() != next_authorities.len() {
-                println!("genesis id {:?}", authority_set_id);
-                println!(
-                    "genesis authority set hash {:?}",
-                    hex::encode(compute_authority_set_hash(&curr_authorities))
-                );
-                println!(
-                    "genesis block (last block justified by genesis id) {:?}",
-                    epoch_end_block
-                );
-                let genesis_header = fetcher.get_header(epoch_end_block).await;
-                println!("genesis header {:?}", hex::encode(genesis_header.hash().0));
-
-                break;
-            }
-            block += 1000;
-        }
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "ci", ignore)]
-    async fn test_get_justification_from_block() {
-        let fetcher = RpcDataFetcher::new().await;
-
-        let justification = fetcher.get_latest_justification_data().await;
-        println!("justification {:?}", justification);
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_simple_justification_change_authority_set() {
         let fetcher = RpcDataFetcher::new().await;
 
@@ -664,7 +581,9 @@ mod tests {
         let block = 645570;
 
         let authority_set_id = fetcher.get_authority_set_id(block - 1).await;
-        let authority_set_hash = fetcher.compute_authority_set_hash(block - 1).await;
+        let authority_set_hash = fetcher
+            .compute_authority_set_hash_for_block(block - 1)
+            .await;
         let header = fetcher.get_header(block).await;
         let header_hash = header.hash();
 
@@ -723,7 +642,9 @@ mod tests {
 
         let header = fetcher.get_header(last_justified_block).await;
         println!("header hash {:?}", hex::encode(header.hash().0));
-        let authority_set_hash = fetcher.compute_authority_set_hash(block_number - 1).await;
+        let authority_set_hash = fetcher
+            .compute_authority_set_hash_for_block(block_number - 1)
+            .await;
         println!("authority set hash {:?}", hex::encode(authority_set_hash.0));
 
         let new_authority_set_id = fetcher.get_authority_set_id(last_justified_block).await;
@@ -762,18 +683,5 @@ mod tests {
         let (_, block_number, _, _) = decode_precommit(signed_message.clone());
 
         println!("block number {:?}", block_number);
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "ci", ignore)]
-    async fn test_system_chain() {
-        // Get the chain ID.
-        let data_fetcher = RpcDataFetcher::new().await;
-
-        let chain = data_fetcher.client.legacy_rpc().system_chain().await;
-        println!("chain {:?}", chain);
-
-        let chain = data_fetcher.client.legacy_rpc().system_properties().await;
-        println!("chain {:?}", chain);
     }
 }
