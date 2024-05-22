@@ -61,6 +61,8 @@ fn verify_encoding_epoch_end_header(
     assert_eq!(header_bytes[cursor..cursor + 4], [0u8, 0u8, 0u8, 0u8]);
 }
 
+/// Verify the justification from the current authority set on the epoch end header and return the new
+/// authority set commitment.
 pub fn main() {
     let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
 

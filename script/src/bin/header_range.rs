@@ -37,17 +37,6 @@ async fn main() {
         .await;
     let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
 
-    // TODO(remove): Sanity check that trusted header hash matches the encoded header when hashed.
-    const DIGEST_SIZE: usize = 32;
-    let mut hasher = Blake2b::new(DIGEST_SIZE);
-    hasher.input(encoded_headers[0].as_slice());
-
-    let mut digest_bytes = [0u8; DIGEST_SIZE];
-    hasher.result(&mut digest_bytes);
-
-    assert_eq!(headers[0].hash().0.to_vec(), trusted_header_hash.0.to_vec());
-    assert_eq!(trusted_header_hash.0.to_vec(), digest_bytes.to_vec());
-
     // Generate proof.
     let mut stdin = SP1Stdin::new();
     stdin.write(&HeaderRangeProofRequestData {
