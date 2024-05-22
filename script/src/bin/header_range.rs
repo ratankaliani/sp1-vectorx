@@ -29,8 +29,7 @@ async fn main() {
     let authority_set_hash = fetcher.compute_authority_set_hash(trusted_block).await;
 
     // TODO: It may make sense to fetch this from an indexer similar to VectorX, this isn't resilient to downtime.
-    let (target_justification, target_header) =
-        fetcher.get_justification_data_for_block(target_block).await;
+    let (target_justification, _) = fetcher.get_justification_data_for_block(target_block).await;
 
     let headers = fetcher
         .get_block_headers_range(trusted_block, target_block)

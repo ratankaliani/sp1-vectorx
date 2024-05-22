@@ -239,6 +239,7 @@ impl RpcDataFetcher {
 
     // This function returns the authorities (as AffinePoint and public key bytes) for a given block number
     // by fetching the "authorities_bytes" from storage and decoding the bytes to a VersionedAuthorityList.
+    // Note: The authorities returned by this function attest to block_number + 1.
     pub async fn get_authorities(&self, block_number: u32) -> Vec<[u8; 32]> {
         let block_hash = self.get_block_hash(block_number).await;
 
