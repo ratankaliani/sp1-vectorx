@@ -4,29 +4,31 @@ use serde::{Deserialize, Serialize};
 pub struct RotateInput {
     pub current_authority_set_id: u64,
     pub current_authority_set_hash: Vec<u8>,
-    pub justification: CircuitJustification,
-    pub header_rotate_data: HeaderRotateData,
+    pub justification: CircuitJustification, // Justification data for the current authority set
+    pub header_rotate_data: HeaderRotateData, // Data for the next authority set rotation
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+// Data for the next set of authorities.
 pub struct HeaderRotateData {
-    pub header_bytes: Vec<u8>,
+    pub header_bytes: Vec<u8>, // Encoded header bytes for the epoch end block
     pub num_authorities: usize,
     pub new_authority_set_hash: Vec<u8>,
-    pub pubkeys: Vec<[u8; 32]>,
-    pub position: usize,
+    pub pubkeys: Vec<[u8; 32]>, 
+    pub position: usize, // Index of the new authority set data in the header bytes
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+// Justification data for an authority set.
 pub struct CircuitJustification {
     pub authority_set_id: u64,
-    pub signed_message: Vec<u8>,
+    pub signed_message: Vec<u8>, // Message signed by authority set.
     pub pubkeys: Vec<[u8; 32]>,
     pub signatures: Vec<Option<Vec<u8>>>,
     pub num_authorities: usize,
     pub current_authority_set_hash: Vec<u8>,
-    pub block_number: u32,
-    pub block_hash: [u8; 32],
+    pub block_number: u32, // Block number associated with the justification
+    pub block_hash: [u8; 32], // Hash of the block associated with the justification
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -40,8 +42,8 @@ pub struct HeaderRangeProofRequestData {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DecodedHeaderData {
-    pub block_number: u32,
-    pub parent_hash: Vec<u8>,
-    pub state_root: Vec<u8>,
-    pub data_root: Vec<u8>,
+    pub block_number: u32, // Block number of the decoded header
+    pub parent_hash: Vec<u8>, // Hash of the parent block
+    pub state_root: Vec<u8>, // State root of the block
+    pub data_root: Vec<u8>, // Data root of the block
 }
