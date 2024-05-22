@@ -58,3 +58,16 @@ async fn main() {
 
     println!("successfully generated and verified proof for the program!")
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    #[cfg_attr(feature = "ci", ignore)]
+    async fn test_compute_authority_set_commitment() {
+        println!("HIII");
+    }
+    
+}
