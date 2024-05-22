@@ -1,5 +1,6 @@
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use types::CircuitJustification;
+pub mod merkle;
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 
@@ -13,14 +14,22 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
 }
 
 /// Verify a simple justification on a block from the specified authority set.
-pub fn verify_simple_justification(justification: CircuitJustification, authority_set_id: u64, current_authority_set_hash: Vec<u8>) {
+pub fn verify_simple_justification(
+    justification: CircuitJustification,
+    authority_set_id: u64,
+    current_authority_set_hash: Vec<u8>,
+) {
     // 1. Verify the authority set commitment is valid.
-    assert_eq!(justification.current_authority_set_hash, current_authority_set_hash);
+    assert_eq!(
+        justification.current_authority_set_hash,
+        current_authority_set_hash
+    );
 
     // 2. Check encoding of precommit mesage.
     // a) Decode precommit.
     // b) Check that values from the decoded precommit match the passed in block number, block hash and authority_set_id.
-    let (signed_block_hash, signed_block_number, _, signed_authority_set_id) = decode_precommit(justification.signed_message.clone());
+    let (signed_block_hash, signed_block_number, _, signed_authority_set_id) =
+        decode_precommit(justification.signed_message.clone());
     assert_eq!(signed_block_hash, justification.block_hash);
     assert_eq!(signed_block_number, justification.block_number);
     assert_eq!(signed_authority_set_id, authority_set_id);
@@ -29,22 +38,29 @@ pub fn verify_simple_justification(justification: CircuitJustification, authorit
     // Must have at least 2/3 of the signatures to verify the justification.
     let threshold = (justification.pubkeys.len() * 2).div_ceil(3);
     let mut verified_signatures = 0;
-    
+
     for i in 0..justification.pubkeys.len() {
         if let Some(signature) = &justification.signatures[i] {
             let signature: [u8; 64] = signature.as_slice().try_into().unwrap();
-            verify_signature(&justification.pubkeys[i], &justification.signed_message, &signature);
+            verify_signature(
+                &justification.pubkeys[i],
+                &justification.signed_message,
+                &signature,
+            );
             verified_signatures += 1;
-    
+
             // Exit the loop early if more than 2/3 of signatures are verified.
             if verified_signatures > threshold {
                 break;
             }
         }
     }
-    
-    assert!(verified_signatures > threshold, "Less than 2/3 of signatures are verified");
-}   
+
+    assert!(
+        verified_signatures > threshold,
+        "Less than 2/3 of signatures are verified"
+    );
+}
 
 /// Compute the new authority set hash.
 pub fn compute_authority_set_commitment(
@@ -87,12 +103,7 @@ pub fn decode_precommit(precommit: Vec<u8>) -> ([u8; 32], u32, u64, u64) {
     // Convert the authority set id to a u64.
     let authority_set_id = u64::from_le_bytes(authority_set_id.try_into().unwrap());
 
-    (
-        block_hash,
-        block_number,
-        round,
-        authority_set_id,
-    )
+    (block_hash, block_number, round, authority_set_id)
 }
 
 /// Decode a SCALE-encoded compact int.

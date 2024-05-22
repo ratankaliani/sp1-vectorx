@@ -70,3 +70,15 @@ pub struct FinalityProof {
     /// The set of headers in the range (B; F] that are unknown to the caller, ordered by block number.
     pub unknown_headers: Vec<Header>,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+/// Stored justification data in Redis.
+/// TODO: Refactor the data stored in Redis and move it out of the VectorX repo into this repo.
+pub struct RedisStoredJustificationData {
+    pub block_number: u32,
+    pub signed_message: Vec<u8>,
+    pub pubkeys: Vec<Vec<u8>>,
+    pub signatures: Vec<Vec<u8>>,
+    pub validator_signed: Vec<bool>,
+    pub num_authorities: usize,
+}

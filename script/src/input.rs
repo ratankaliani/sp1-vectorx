@@ -18,6 +18,7 @@ use sha2::{Digest, Sha256};
 use sp_core::ed25519;
 
 use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
+use crate::redis::RedisClient;
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 
 // Compute the chained hash of the authority set.
@@ -34,6 +35,8 @@ pub fn compute_authority_set_hash(authorities: &[[u8; 32]]) -> Vec<u8> {
 
 pub struct RpcDataFetcher {
     pub client: AvailClient,
+    pub redis: RedisClient,
+    pub avail_chain_id: String,
 }
 
 impl RpcDataFetcher {
@@ -41,8 +44,14 @@ impl RpcDataFetcher {
         dotenv::dotenv().ok();
 
         let url = env::var("AVAIL_URL").expect("AVAIL_URL must be set");
+        let avail_chain_id = env::var("AVAIL_CHAIN_ID").expect("AVAIL_CHAIN_ID must be set");
         let client = AvailClient::new(url.as_str()).await.unwrap();
-        RpcDataFetcher { client }
+        let redis = RedisClient::new();
+        RpcDataFetcher {
+            client,
+            redis,
+            avail_chain_id,
+        }
     }
 
     // This function returns the last block justified by target_authority_set_id. This block
@@ -326,6 +335,61 @@ impl RpcDataFetcher {
             block_number,
             block_hash,
         }
+    }
+
+    /// Get the justification for a block using the Redis cache from the justification indexer.
+    /// TODO: Move justification indexer into this repo, for now, we need to convert it from the
+    /// type stored by the VectorX repo.
+    pub async fn get_justification_data_for_block(
+        &self,
+        block_number: u32,
+    ) -> (CircuitJustification, Header) {
+        // Note: The redis justification type is from VectorX, and we need to map it onto the
+        // CircuitJustification SP1 VectorX type.
+        let redis_justification = self
+            .redis
+            .get_justification(&self.avail_chain_id, block_number)
+            .await
+            .unwrap();
+
+        let block_hash = self.get_block_hash(redis_justification.block_number).await;
+
+        let authority_set_id = self
+            .get_authority_set_id(redis_justification.block_number - 1)
+            .await;
+        let authority_set_hash = self
+            .compute_authority_set_hash(redis_justification.block_number - 1)
+            .await;
+        let header = self.get_header(redis_justification.block_number).await;
+
+        // Convert pubkeys from Redis into [u8; 32]
+        let pubkeys: Vec<[u8; 32]> = redis_justification
+            .pubkeys
+            .iter()
+            .map(|pubkey| pubkey.clone().try_into().unwrap())
+            .collect();
+
+        let mut signatures: Vec<Option<Vec<u8>>> = Vec::new();
+        for i in 0..redis_justification.signatures.len() {
+            if redis_justification.validator_signed[i] {
+                signatures.push(Some(redis_justification.signatures[i].clone()));
+            } else {
+                signatures.push(None);
+            }
+        }
+
+        // Convert Redis stored justification into CircuitJustification.
+        let circuit_justification = CircuitJustification {
+            signed_message: redis_justification.signed_message,
+            authority_set_id,
+            current_authority_set_hash: authority_set_hash.0.to_vec(),
+            pubkeys,
+            signatures,
+            num_authorities: redis_justification.num_authorities,
+            block_number: redis_justification.block_number,
+            block_hash: block_hash.0,
+        };
+        (circuit_justification, header)
     }
 
     /// Get the latest justification data. Because Avail does not store the justification data for

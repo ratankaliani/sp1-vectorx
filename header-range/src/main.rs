@@ -4,9 +4,8 @@
 sp1_zkvm::entrypoint!(main);
 
 use blake2::digest::{Update, VariableOutput};
-use blake2::{Blake2s256, Digest};
 use blake2::Blake2bVar;
-use hex;
+use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     decode_scale_compact_int,
     types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData},
@@ -47,8 +46,8 @@ pub fn main() {
 
     // Hash the headers.
     let mut header_hashes = Vec::new();
+    const DIGEST_SIZE: usize = 32;
     for header_bytes in encoded_headers {
-        const DIGEST_SIZE: usize = 32;
         let mut hasher = Blake2bVar::new(DIGEST_SIZE).unwrap();
         hasher.update(header_bytes.as_slice());
 
@@ -91,56 +90,20 @@ pub fn main() {
 
     // Stage 4: Compute the simple Merkle tree commitment (start with fixed size of 512) for the headers.
     let (state_root_commitment, data_root_commitment) =
-    get_merkle_root_commitments(&decoded_headers_data[1..]);
+        get_merkle_root_commitments(&decoded_headers_data[1..]);
 
-    println!("State root commitment: {}", hex::encode(state_root_commitment.clone()));
-    println!("Data root commitment: {}", hex::encode(data_root_commitment.clone()));
-    
+    println!(
+        "State root commitment: {}",
+        hex::encode(state_root_commitment.clone())
+    );
+    println!(
+        "Data root commitment: {}",
+        hex::encode(data_root_commitment.clone())
+    );
+
     // Commit the state root and data root Merkle roots.
-    sp1_zkvm::io::commit(&state_root_commitment);
-    sp1_zkvm::io::commit(&data_root_commitment);
-}
-
-/// Computes the simple Merkle root of the leaves.
-fn get_merkle_root(leaves: Vec<Vec<u8>>) -> Vec<u8> {
-    let mut nodes = leaves;
-    while nodes.len() > 1 {
-        nodes = (0..nodes.len() / 2)
-            .map(|i| {
-                let mut hasher = Blake2s256::new();
-                Digest::update(&mut hasher, &nodes[2 * i]);
-                Digest::update(&mut hasher, &nodes[2 * i + 1]);
-                hasher.finalize().to_vec()
-            })
-            .collect();
-    }
-    nodes[0].clone()
-}
-
-/// Computes the simple Merkle root commitments for the state root and data root.
-/// The size of the Merkle tree is fixed at 512.
-fn get_merkle_root_commitments(decoded_headers: &[DecodedHeaderData]) -> (Vec<u8>, Vec<u8>) {
-    let mut state_root_leaves = Vec::new();
-    let mut data_root_leaves = Vec::new();
-
-    for header in decoded_headers {
-        state_root_leaves.push(header.state_root.clone());
-        data_root_leaves.push(header.data_root.clone());
-    }
-
-    // Pad the leaves to a fixed size of 512.
-    while state_root_leaves.len() < 512 {
-        state_root_leaves.push(vec![0u8; 32]);
-        data_root_leaves.push(vec![0u8; 32]);
-    }
-
-    // Compute the Merkle root for state root leaves.
-    let state_root_commitment = get_merkle_root(state_root_leaves);
-
-    // Compute the Merkle root for data root leaves.
-    let data_root_commitment = get_merkle_root(data_root_leaves);
-
-    (state_root_commitment, data_root_commitment)
+    sp1_zkvm::io::commit_slice(&state_root_commitment);
+    sp1_zkvm::io::commit_slice(&data_root_commitment);
 }
 
 /// Decode the header into a DecodedHeaderData struct.
