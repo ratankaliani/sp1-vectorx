@@ -15,13 +15,6 @@ use sp1_vectorx_primitives::{
 pub fn main() {
     let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
 
-    // Commit to the input data.
-    sp1_zkvm::io::commit(&request_data.trusted_block);
-    sp1_zkvm::io::commit(&request_data.trusted_header_hash);
-    sp1_zkvm::io::commit(&request_data.authority_set_id);
-    sp1_zkvm::io::commit(&request_data.authority_set_hash);
-    sp1_zkvm::io::commit(&request_data.target_block);
-
     let mut encoded_headers = Vec::new();
     // Read the encoded headers.
     for _ in 0..request_data.target_block - request_data.trusted_block + 1 {
@@ -31,7 +24,6 @@ pub fn main() {
 
     let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
 
-    // TODO
     // 1. Decode the headers using: https://github.com/succinctlabs/vectorx/blob/fb83641259aef1f5df33efa73c23d90973d64e24/circuits/builder/decoder.rs#L104-L157
     // 2. Verify the chain of headers is connected from the trusted block to the target block.
     // 3. Verify the justification is valid.
@@ -92,18 +84,15 @@ pub fn main() {
     let (state_root_commitment, data_root_commitment) =
         get_merkle_root_commitments(&decoded_headers_data[1..]);
 
-    println!(
-        "State root commitment: {}",
-        hex::encode(state_root_commitment)
-    );
-    println!(
-        "Data root commitment: {}",
-        hex::encode(data_root_commitment)
-    );
-
     // Commit the state root and data root Merkle roots.
     sp1_zkvm::io::commit_slice(&state_root_commitment);
     sp1_zkvm::io::commit_slice(&data_root_commitment);
+    // // Commit to the input data.
+    sp1_zkvm::io::commit(&request_data.trusted_block);
+    sp1_zkvm::io::commit(&request_data.trusted_header_hash);
+    sp1_zkvm::io::commit(&request_data.authority_set_id);
+    sp1_zkvm::io::commit(&request_data.authority_set_hash);
+    sp1_zkvm::io::commit(&request_data.target_block);
 }
 
 /// Decode the header into a DecodedHeaderData struct.
