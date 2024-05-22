@@ -19,7 +19,7 @@ async fn main() {
     // Fetch the authority set hash for the specified authority set id.
     // TODO: In the future, this will be read from the contract, along with the epoch end block number.
     let authority_set_hash = fetcher
-        .compute_authority_set_hash(epoch_end_block)
+        .compute_authority_set_hash(epoch_end_block-1)
         .await;
 
     // Fetch the justification for the epoch end block of the specified authority set id.
