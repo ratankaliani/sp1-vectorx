@@ -62,12 +62,35 @@ async fn main() {
 
 #[cfg(test)]
 mod tests {
+    use sp1_vectorx_primitives::compute_authority_set_commitment;
+
     use super::*;
 
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
     async fn test_compute_authority_set_commitment() {
-        println!("HIII");
+        // Generate & proof as usual.
+        let fetcher = RpcDataFetcher::new().await;
+
+        let authority_set_id = 71u64;
+        let epoch_end_block = fetcher.last_justified_block(authority_set_id).await;
+    
+        let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
+      
+        // Generate next authority set hash.
+        let generated_next_authority_set_hash_bytes32 = compute_authority_set_commitment(header_rotate_data.num_authorities, header_rotate_data.pubkeys.clone());
+        let generated_next_authority_set_hash = hex::encode(generated_next_authority_set_hash_bytes32);
+        println!("Generated hash: {}", generated_next_authority_set_hash);
+
+        // Get correct next authority set hash.
+        let next_authority_set_hash_bytes32 = fetcher
+        .compute_authority_set_hash(epoch_end_block)
+        .await.0.to_vec();
+        let next_authority_set_hash = hex::encode(next_authority_set_hash_bytes32);
+        println!("Correct hash: {}", next_authority_set_hash);
+
+        // Verify that computed authority set hash is correct.
+        assert_eq!(next_authority_set_hash, generated_next_authority_set_hash);
     }
     
 }
