@@ -6,6 +6,7 @@ sp1_zkvm::entrypoint!(main);
 use blake2::digest::{Update, VariableOutput};
 use blake2::{Blake2s256, Digest};
 use blake2::Blake2bVar;
+use hex;
 use sp1_vectorx_primitives::{
     decode_scale_compact_int,
     types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData},
@@ -90,8 +91,11 @@ pub fn main() {
 
     // Stage 4: Compute the simple Merkle tree commitment (start with fixed size of 512) for the headers.
     let (state_root_commitment, data_root_commitment) =
-    get_merkle_root_commitments(&header_hashes);
+    get_merkle_root_commitments(&decoded_headers_data[1..]);
 
+    println!("State root commitment: {}", hex::encode(state_root_commitment.clone()));
+    println!("Data root commitment: {}", hex::encode(data_root_commitment.clone()));
+    
     // Commit the state root and data root Merkle roots.
     sp1_zkvm::io::commit(&state_root_commitment);
     sp1_zkvm::io::commit(&data_root_commitment);
@@ -115,9 +119,14 @@ fn get_merkle_root(leaves: Vec<Vec<u8>>) -> Vec<u8> {
 
 /// Computes the simple Merkle root commitments for the state root and data root.
 /// The size of the Merkle tree is fixed at 512.
-fn get_merkle_root_commitments(header_hashes: &[Vec<u8>]) -> (Vec<u8>, Vec<u8>) {
-    let mut state_root_leaves = header_hashes.to_vec();
-    let mut data_root_leaves = header_hashes.to_vec();
+fn get_merkle_root_commitments(decoded_headers: &[DecodedHeaderData]) -> (Vec<u8>, Vec<u8>) {
+    let mut state_root_leaves = Vec::new();
+    let mut data_root_leaves = Vec::new();
+
+    for header in decoded_headers {
+        state_root_leaves.push(header.state_root.clone());
+        data_root_leaves.push(header.data_root.clone());
+    }
 
     // Pad the leaves to a fixed size of 512.
     while state_root_leaves.len() < 512 {
@@ -132,7 +141,7 @@ fn get_merkle_root_commitments(header_hashes: &[Vec<u8>]) -> (Vec<u8>, Vec<u8>) 
     let data_root_commitment = get_merkle_root(data_root_leaves);
 
     (state_root_commitment, data_root_commitment)
-} 
+}
 
 /// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {

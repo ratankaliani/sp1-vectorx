@@ -19,7 +19,7 @@ async fn main() {
 
     // TODO: Update this to read from args/on-chain.
     let head = fetcher.get_head().await;
-    let trusted_block = 238000;
+    let trusted_block = 237960;
 
     let trusted_header = fetcher.get_header(trusted_block).await;
     let trusted_header_hash = trusted_header.hash();
@@ -65,7 +65,17 @@ async fn main() {
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(HEADER_RANGE_ELF);
-    let proof = client.prove(&pk, stdin).expect("proving failed");
+    let mut proof = client.prove(&pk, stdin).expect("proving failed");
+
+    // Read outputs.    
+    let state_root_commitment = proof.public_values.read::<Vec<u8>>();
+    let data_root_commitment = proof.public_values.read::<Vec<u8>>();
+    let st = hex::encode(state_root_commitment);
+    let da = hex::encode(data_root_commitment);
+
+    println!("State root commitment: {}", st);
+    println!("Data root commitment: {}", da);
+
     // Verify proof.
     client.verify(&proof, &vk).expect("verification failed");
 
