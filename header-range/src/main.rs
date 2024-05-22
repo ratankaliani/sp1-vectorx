@@ -4,6 +4,7 @@
 sp1_zkvm::entrypoint!(main);
 
 use blake2::digest::{Update, VariableOutput};
+use blake2::{Blake2s256, Digest};
 use blake2::Blake2bVar;
 use sp1_vectorx_primitives::{
     decode_scale_compact_int,
@@ -85,8 +86,53 @@ pub fn main() {
         target_justification,
         request_data.authority_set_id,
         Vec::from(request_data.authority_set_hash),
-    )
+    );
+
+    // Stage 4: Compute the simple Merkle tree commitment (start with fixed size of 512) for the headers.
+    let (state_root_commitment, data_root_commitment) =
+    get_merkle_root_commitments(&header_hashes);
+
+    // Commit the state root and data root Merkle roots.
+    sp1_zkvm::io::commit(&state_root_commitment);
+    sp1_zkvm::io::commit(&data_root_commitment);
 }
+
+/// Computes the simple Merkle root of the leaves.
+fn get_merkle_root(leaves: Vec<Vec<u8>>) -> Vec<u8> {
+    let mut nodes = leaves;
+    while nodes.len() > 1 {
+        nodes = (0..nodes.len() / 2)
+            .map(|i| {
+                let mut hasher = Blake2s256::new();
+                Digest::update(&mut hasher, &nodes[2 * i]);
+                Digest::update(&mut hasher, &nodes[2 * i + 1]);
+                hasher.finalize().to_vec()
+            })
+            .collect();
+    }
+    nodes[0].clone()
+}
+
+/// Computes the simple Merkle root commitments for the state root and data root.
+/// The size of the Merkle tree is fixed at 512.
+fn get_merkle_root_commitments(header_hashes: &[Vec<u8>]) -> (Vec<u8>, Vec<u8>) {
+    let mut state_root_leaves = header_hashes.to_vec();
+    let mut data_root_leaves = header_hashes.to_vec();
+
+    // Pad the leaves to a fixed size of 512.
+    while state_root_leaves.len() < 512 {
+        state_root_leaves.push(vec![0u8; 32]);
+        data_root_leaves.push(vec![0u8; 32]);
+    }
+
+    // Compute the Merkle root for state root leaves.
+    let state_root_commitment = get_merkle_root(state_root_leaves);
+
+    // Compute the Merkle root for data root leaves.
+    let data_root_commitment = get_merkle_root(data_root_leaves);
+
+    (state_root_commitment, data_root_commitment)
+} 
 
 /// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {

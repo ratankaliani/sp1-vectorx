@@ -20,7 +20,6 @@ async fn main() {
     // TODO: Update this to read from args/on-chain.
     let head = fetcher.get_head().await;
     let trusted_block = 238000;
-    println!("Trusted block: {}", trusted_block);
 
     let trusted_header = fetcher.get_header(trusted_block).await;
     let trusted_header_hash = trusted_header.hash();
