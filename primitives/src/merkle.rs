@@ -3,7 +3,7 @@ use sha2::{Digest, Sha256};
 use crate::types::DecodedHeaderData;
 
 /// Computes the simple Merkle root of the leaves.
-fn get_merkle_root(leaves: Vec<Vec<u8>>) -> Vec<u8> {
+fn get_merkle_root(leaves: Vec<Vec<u8>>) -> [u8; 32] {
     let mut nodes = leaves;
     while nodes.len() > 1 {
         nodes = (0..nodes.len() / 2)
@@ -15,12 +15,12 @@ fn get_merkle_root(leaves: Vec<Vec<u8>>) -> Vec<u8> {
             })
             .collect();
     }
-    nodes[0].clone()
+    nodes[0].clone().try_into().unwrap()
 }
 
 /// Computes the simple Merkle root commitments for the state root and data root.
 /// The size of the Merkle tree is fixed at 512.
-pub fn get_merkle_root_commitments(decoded_headers: &[DecodedHeaderData]) -> (Vec<u8>, Vec<u8>) {
+pub fn get_merkle_root_commitments(decoded_headers: &[DecodedHeaderData]) -> ([u8; 32], [u8; 32]) {
     let mut state_root_leaves = Vec::new();
     let mut data_root_leaves = Vec::new();
 

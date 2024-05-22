@@ -94,11 +94,11 @@ pub fn main() {
 
     println!(
         "State root commitment: {}",
-        hex::encode(state_root_commitment.clone())
+        hex::encode(state_root_commitment)
     );
     println!(
         "Data root commitment: {}",
-        hex::encode(data_root_commitment.clone())
+        hex::encode(data_root_commitment)
     );
 
     // Commit the state root and data root Merkle roots.
