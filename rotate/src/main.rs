@@ -7,7 +7,7 @@ use core::num;
 
 use blake2::{Blake2b512, Digest};
 use ed25519_consensus::{Signature, VerificationKey};
-use sp1_vectorx_primitives::{compute_authority_set_commitment, types::{CircuitJustification, HeaderRotateData, RotateInput}, verify_simple_justification};
+use sp1_vectorx_primitives::{compute_authority_set_commitment, types::{CircuitJustification, HeaderRotateData, RotateInput}, verify_epoch_end_header, verify_simple_justification};
 
 pub fn main() {
     let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
@@ -20,6 +20,7 @@ pub fn main() {
         .expect("Failed to convert hash to bytes32");
 
     verify_simple_justification(rotate_input.justification, rotate_input.current_authority_set_id, rotate_input.current_authority_set_hash);
+    verify_epoch_end_header(rotate_input.header_rotate_data, new_authority_set_hash);
 
     sp1_zkvm::io::commit_slice(&new_authority_set_hash_bytes32);
 }

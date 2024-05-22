@@ -1,5 +1,5 @@
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
-use types::CircuitJustification;
+use types::{CircuitJustification, HeaderRotateData};
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 
@@ -63,6 +63,19 @@ pub fn compute_authority_set_commitment(
         commitment_so_far = Sha256::digest(&input_to_hash).to_vec();
     }
     commitment_so_far
+}
+
+// header: &EncodedHeaderVariable<MAX_HEADER_SIZE>,
+// header_hash: Bytes32Variable,
+// num_authorities: &Variable,
+// start_position: &Variable,
+// new_pubkeys: &ArrayVariable<CompressedEdwardsYVariable, MAX_AUTHORITY_SET_SIZE>,
+pub fn verify_epoch_end_header(header_rotate_data: HeaderRotateData, verified_new_authority_set_hash: Vec<u8>) {
+    // Assert num_authorities is not 0.
+    assert!(header_rotate_data.num_authorities > 0, "Number of authorities must be greater than 0");
+    
+    println!("{:?}", hex::encode(header_rotate_data.header_bytes));
+
 }
 
 pub fn decode_precommit(precommit: Vec<u8>) -> ([u8; 32], u32, u64, u64) {
