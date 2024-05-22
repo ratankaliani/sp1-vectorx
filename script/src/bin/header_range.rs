@@ -73,11 +73,6 @@ async fn main() {
     let mut data_root_commitment = [0u8; 32];
     proof.public_values.read_slice(&mut state_root_commitment);
     proof.public_values.read_slice(&mut data_root_commitment);
-    let st = hex::encode(state_root_commitment);
-    let da = hex::encode(data_root_commitment);
-
-    println!("State root commitment: {}", st);
-    println!("Data root commitment: {}", da);
 
     // Verify proof.
     client.verify(&proof, &vk).expect("verification failed");
