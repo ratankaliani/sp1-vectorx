@@ -85,7 +85,7 @@ pub fn main() {
 
     // Stage 4: Compute the simple Merkle tree commitment for the headers.
     let (state_root_commitment, data_root_commitment) =
-        get_merkle_root_commitments(&decoded_headers_data[1..], x);
+        get_merkle_root_commitments(&decoded_headers_data[1..], request_data.merkle_tree_size);
 
     // Commit the state root and data root Merkle roots.
     sp1_zkvm::io::commit_slice(&state_root_commitment);

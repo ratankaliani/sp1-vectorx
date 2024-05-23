@@ -38,7 +38,7 @@ async fn main() {
     let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
 
     let num_headers = target_block - trusted_block + 1;
-    let header_range_commitment_tree_size = fetcher.get_merkle_tree_size(num_headers);
+    let merkle_tree_size = fetcher.get_merkle_tree_size(num_headers);
 
     // Generate proof.
     let mut stdin = SP1Stdin::new();
@@ -48,6 +48,7 @@ async fn main() {
         trusted_header_hash: trusted_header_hash.0,
         authority_set_hash: authority_set_hash.0,
         authority_set_id,
+        merkle_tree_size,
     });
     // Should be target_block - trusted_block + 1 headers.
     for encoded_header in encoded_headers {

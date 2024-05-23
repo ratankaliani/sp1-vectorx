@@ -54,12 +54,12 @@ impl RpcDataFetcher {
         }
     }
 
-    pub fn get_merkle_tree_size(&self, num_headers: u32) -> u32 {
+    pub fn get_merkle_tree_size(&self, num_headers: u32) -> usize {
         let mut size = 1;
         while size < num_headers {
             size *= 2;
         }
-        size
+        size.try_into().unwrap()
     }
 
     // This function returns the last block justified by target_authority_set_id. This block

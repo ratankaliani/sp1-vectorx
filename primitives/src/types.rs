@@ -38,6 +38,7 @@ pub struct HeaderRangeProofRequestData {
     pub authority_set_id: u64,
     pub authority_set_hash: [u8; 32],
     pub target_block: u32,
+    pub merkle_tree_size: usize,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
