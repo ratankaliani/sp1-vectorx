@@ -14,18 +14,11 @@ jobs:
     name: CI Test Suite
     runs-on: buildjet-32vcpu-ubuntu-2204
     if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
-    strategy:
-      matrix:
-        project:
-          - primitives
-          - rotate
-          - script
-          - header-range
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 0
+
       - name: rust-cache
         uses: buildjet/cache@v3
         with:
@@ -38,6 +31,7 @@ jobs:
             ~/.rustup/
           key: test-rust-nightly-2024-02-22-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: rust-nightly-2024-02-22-
+
       - name: Install nightly toolchain
         id: rustc-toolchain
         uses: actions-rs/toolchain@v1
@@ -45,31 +39,56 @@ jobs:
           profile: minimal
           toolchain: nightly-2024-02-22
           override: true
-      - name: Run cargo test
+
+      - name: Run cargo test (rotate)
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --release --features "ci"
-          working-directory: sp1-vectorx/${{ matrix.project }}
         env:
-          RUST_LOG: info
+          RUST_LOG: 1
           RUST_BACKTRACE: 1
+        working-directory: ./rotate
+
+      - name: Run cargo test (script)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --features "ci"
+        env:
+          RUST_LOG: 1
+          RUST_BACKTRACE: 1
+        working-directory: ./script
+
+      - name: Run cargo test (primitives)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --features "ci"
+        env:
+          RUST_LOG: 1
+          RUST_BACKTRACE: 1
+        working-directory: ./primitives
+
+      - name: Run cargo test (header-range)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --release --features "ci"
+        env:
+          RUST_LOG: 1
+          RUST_BACKTRACE: 1
+        working-directory: ./header-range
 
   lints:
     name: Formatting & Clippy
     runs-on: buildjet-32vcpu-ubuntu-2204
     if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
-    strategy:
-      matrix:
-        project:
-          - primitives
-          - rotate
-          - script
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-          fetch-depth: 0
+
       - name: rust-cache
         uses: buildjet/cache@v3
         with:
@@ -82,6 +101,7 @@ jobs:
             ~/.rustup/
           key: clippy-rust-nightly-2024-02-22-${{ hashFiles('**/Cargo.toml') }}
           restore-keys: rust-nightly-2024-02-22-
+
       - name: Install nightly toolchain
         id: rustc-toolchain
         uses: actions-rs/toolchain@v1
@@ -90,19 +110,75 @@ jobs:
           toolchain: nightly-2024-02-22
           override: true
           components: rustfmt, clippy
-      - name: Run cargo fmt
+
+      - name: Run cargo fmt (rotate)
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
-          working-directory: sp1-vectorx/${{ matrix.project }}
         env:
           CARGO_INCREMENTAL: 1
-      - name: Run cargo clippy
+        working-directory: ./rotate
+
+      - name: Run cargo fmt (script)
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+        env:
+          CARGO_INCREMENTAL: 1
+        working-directory: ./script
+
+      - name: Run cargo fmt (primitives)
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+        env:
+          CARGO_INCREMENTAL: 1
+        working-directory: ./primitives
+
+      - name: Run cargo fmt (header-range)
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+        env:
+          CARGO_INCREMENTAL: 1
+        working-directory: ./header-range
+
+      - name: Run cargo clippy (rotate)
         uses: actions-rs/cargo@v1
         with:
           command: clippy
           args: --all-features --all-targets -- -D warnings -A incomplete-features
-          working-directory: sp1-vectorx/${{ matrix.project }}
         env:
           CARGO_INCREMENTAL: 1
+        working-directory: ./rotate
+
+      - name: Run cargo clippy (script)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-features --all-targets -- -D warnings -A incomplete-features
+        env:
+          CARGO_INCREMENTAL: 1
+        working-directory: ./script
+
+      - name: Run cargo clippy (primitives)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-features --all-targets -- -D warnings -A incomplete-features
+        env:
+          CARGO_INCREMENTAL: 1
+        working-directory: ./primitives
+
+      - name: Run cargo clippy (header-range)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-features --all-targets -- -D warnings -A incomplete-features
+        env:
+          CARGO_INCREMENTAL: 1
+        working-directory: ./header-range

@@ -1,7 +1,11 @@
 name: "PR"
+
 on:
   pull_request_target:
-    types: [opened, edited, synchronize]
+    types:
+      - opened
+      - edited
+      - synchronize
 
 permissions:
   pull-requests: read
@@ -11,10 +15,6 @@ jobs:
     name: PR
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
       - uses: amannn/action-semantic-pull-request@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
