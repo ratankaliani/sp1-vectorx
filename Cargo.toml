@@ -1,8 +1,6 @@
 [workspace]
 members = [
-  "header-range",
   "primitives",
-  "rotate",
   "script",
 ]
 exclude = ["examples/target"]

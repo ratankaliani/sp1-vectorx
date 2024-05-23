@@ -2802,7 +2802,6 @@ dependencies = [
  "rand_core 0.6.4",
  "sec1",
  "subtle",
- "tap",
  "zeroize",
 ]
 
@@ -8547,23 +8546,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp1-precompiles"
-version = "0.1.0"
-source = "git+https://github.com/succinctlabs/sp1.git?branch=dev#c140e0a031a03585bf4276f21ab05bacb8bf1b3b"
-dependencies = [
- "anyhow",
- "bincode",
- "cfg-if",
- "getrandom 0.2.15",
- "hex",
- "k256",
- "num",
- "rand 0.8.5",
- "serde",
- "snowbridge-amcl",
-]
-
-[[package]]
 name = "sp1-primitives"
 version = "0.1.0"
 source = "git+https://github.com/succinctlabs/sp1.git?branch=dev#c140e0a031a03585bf4276f21ab05bacb8bf1b3b"
@@ -8799,17 +8781,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp1-vectorx-header-range-program"
-version = "0.1.0"
-dependencies = [
- "blake2",
- "ed25519-consensus",
- "sha2 0.10.8",
- "sp1-vectorx-primitives",
- "sp1-zkvm",
-]
-
-[[package]]
 name = "sp1-vectorx-primitives"
 version = "0.1.0"
 dependencies = [
@@ -8821,17 +8792,6 @@ dependencies = [
  "parity-scale-codec",
  "serde",
  "sha2 0.10.8",
-]
-
-[[package]]
-name = "sp1-vectorx-rotate-program"
-version = "0.1.0"
-dependencies = [
- "blake2",
- "ed25519-consensus",
- "sha2 0.10.8",
- "sp1-vectorx-primitives",
- "sp1-zkvm",
 ]
 
 [[package]]
@@ -8871,23 +8831,6 @@ dependencies = [
  "sp1-vectorx-primitives",
  "subxt",
  "tokio",
-]
-
-[[package]]
-name = "sp1-zkvm"
-version = "0.1.0"
-source = "git+https://github.com/succinctlabs/sp1.git?branch=dev#c140e0a031a03585bf4276f21ab05bacb8bf1b3b"
-dependencies = [
- "bincode",
- "cfg-if",
- "getrandom 0.2.15",
- "k256",
- "libm",
- "once_cell",
- "rand 0.8.5",
- "serde",
- "sha2 0.10.8",
- "sp1-precompiles",
 ]
 
 [[package]]
