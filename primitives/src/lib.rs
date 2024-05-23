@@ -150,6 +150,27 @@ pub fn decode_scale_compact_int(bytes: &[u8]) -> (u64, usize) {
     }
 }
 
+/// Verify that the encoded validators match the provided pubkeys, have the correct weight, and the delay is zero.
+pub fn verify_encoded_validators(
+    header_bytes: &[u8],
+    start_cursor: usize,
+    pubkeys: &[[u8; 32]],
+) {
+    let mut cursor = start_cursor;
+    for pubkey in pubkeys {
+        let extracted_pubkey = &header_bytes[cursor..cursor + 32];
+        // Assert that the extracted pubkey matches the expected pubkey.
+        assert_eq!(extracted_pubkey, pubkey);
+        let extracted_weight = &header_bytes[cursor + 32..cursor + 40];
+        // All validating voting weights in Avail are 1.
+        assert_eq!(extracted_weight, &[1u8, 0, 0, 0, 0, 0, 0, 0]);
+        cursor += 40;
+    }
+    // Assert the delay is 0.
+    assert_eq!(&header_bytes[cursor..cursor + 4], &[0u8, 0u8, 0u8, 0u8]);
+}
+
+
 #[cfg(test)]
 mod tests {
     use codec::{Compact, Encode};

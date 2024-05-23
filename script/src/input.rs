@@ -1,7 +1,9 @@
 use anyhow::Result;
 use ethers::types::H256;
 use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
-use sp1_vectorx_primitives::{verify_signature, compute_authority_set_commitment};
+use sp1_vectorx_primitives::{
+    compute_authority_set_commitment, verify_encoded_validators, verify_signature,
+};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
@@ -19,7 +21,6 @@ use sp_core::ed25519;
 use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
 use crate::redis::RedisClient;
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
-
 
 pub struct RpcDataFetcher {
     pub client: AvailClient,
@@ -428,26 +429,8 @@ impl RpcDataFetcher {
                     let mut cursor = 1 + encoded_num_authorities_len;
                     let authorities_bytes = &value[cursor..];
 
-                    for (i, authority_chunk) in
-                        authorities_bytes.chunks_exact(VALIDATOR_LENGTH).enumerate()
-                    {
-                        let pubkey = &authority_chunk[..PUBKEY_LENGTH];
-                        let weight = &authority_chunk[PUBKEY_LENGTH..];
-
-                        let expected_weight = &[1u8, 0, 0, 0, 0, 0, 0, 0];
-
-                        // Assert the pubkey in the encoded log is correct.
-                        assert_eq!(*pubkey, new_authorities[i]);
-
-                        // Assert the weight is correct.
-                        assert_eq!(weight, expected_weight);
-
-                        cursor += VALIDATOR_LENGTH;
-                    }
-
-                    // Assert delay is [0, 0, 0, 0]
-                    let delay = &value[cursor..];
-                    assert_eq!(delay[..], [0, 0, 0, 0]);
+                    // Cursor is set to 0 because we're passing in authorities_bytes, which is already offset by the cursor.
+                    verify_encoded_validators(authorities_bytes, 0, &new_authorities);
 
                     break;
                 }
