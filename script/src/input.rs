@@ -54,6 +54,7 @@ impl RpcDataFetcher {
         }
     }
 
+    // TODO: Should be removed when we read header_range_tree_commitment_size from the contract.
     pub fn get_merkle_tree_size(&self, num_headers: u32) -> usize {
         let mut size = 1;
         while size < num_headers {

@@ -9,17 +9,17 @@ pub struct RotateInput {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-// Data for the next set of authorities.
+/// Data for the next set of authorities.
 pub struct HeaderRotateData {
     pub header_bytes: Vec<u8>, // Encoded header bytes for the epoch end block
     pub num_authorities: usize,
     pub new_authority_set_hash: Vec<u8>,
     pub pubkeys: Vec<[u8; 32]>, 
-    pub position: usize, // Index of the new authority set data in the header bytes
+    pub consensus_log_position: usize, // Index of the new authority set data in the header bytes
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-// Justification data for an authority set.
+/// Justification data for an authority set.
 pub struct CircuitJustification {
     pub authority_set_id: u64,
     pub signed_message: Vec<u8>, // Message signed by authority set.

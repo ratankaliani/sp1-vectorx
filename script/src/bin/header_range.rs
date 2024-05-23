@@ -20,6 +20,7 @@ async fn get_header_range_proof_request_data(
         .await;
 
     let num_headers = target_block - trusted_block + 1;
+    // TODO: Should be fetched from the contract when we take this to production.
     let merkle_tree_size = fetcher.get_merkle_tree_size(num_headers);
 
     HeaderRangeProofRequestData {

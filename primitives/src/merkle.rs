@@ -31,7 +31,7 @@ pub fn get_merkle_root_commitments(decoded_headers: &[DecodedHeaderData], tree_s
     // Confirm tree_size is a power of 2.
     assert!(tree_size.is_power_of_two());
 
-    // Confirm that it's greater than end block - start block
+    // Confirm that it's greater than the number of headers that's passed in.
     assert!(tree_size >= decoded_headers.len());
 
     // Pad the leaves to a fixed size of tree_size.
