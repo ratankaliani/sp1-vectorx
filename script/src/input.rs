@@ -2,7 +2,7 @@ use anyhow::Result;
 use ethers::types::H256;
 use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
 use sp1_vectorx_primitives::{
-    compute_authority_set_commitment, verify_encoded_validators, verify_signature,
+    compute_authority_set_commitment, verify_encoded_validators, verify_signature, consts::HASH_SIZE
 };
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -18,7 +18,7 @@ use codec::{Compact, Decode, Encode};
 use futures::future::join_all;
 use sp_core::ed25519;
 
-use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
+
 use crate::redis::RedisClient;
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 
