@@ -1,18 +1,19 @@
 use sha2::{Digest, Sha256};
 
 use crate::types::DecodedHeaderData;
+use alloy_primitives::{B256, FixedBytes};
 
 // Computes the simple Merkle root of the leaves.
 // If the number of leaves is not a power of 2, the leaves are extended with 0s to the next power of 2.
-pub fn get_merkle_root(leaves: Vec<Vec<u8>>) -> [u8; 32] {
+pub fn get_merkle_root(leaves: Vec<B256>) -> B256 {
     if leaves.is_empty() {
-        return [0u8; 32];
+        return B256::from_slice(&[0u8; 32]);
     }
 
     // Extend leaves to a power of 2.
     let mut leaves = leaves;
     while leaves.len().count_ones() != 1 {
-        leaves.push([0u8; 32].to_vec());
+        leaves.push(B256::from([0u8; 32]));
     }
 
     // In VectorX, the leaves are not hashed.
@@ -23,19 +24,19 @@ pub fn get_merkle_root(leaves: Vec<Vec<u8>>) -> [u8; 32] {
                 let mut hasher = Sha256::new();
                 hasher.update(&nodes[2 * i]);
                 hasher.update(&nodes[2 * i + 1]);
-                hasher.finalize().to_vec()
+                B256::from_slice(&hasher.finalize())
             })
             .collect();
     }
 
-    nodes[0].clone().try_into().unwrap()
+    nodes[0]
 }
 
 /// Computes the simple Merkle root commitments for the state root and data root.
 pub fn get_merkle_root_commitments(
     decoded_headers: &[DecodedHeaderData],
     tree_size: usize,
-) -> ([u8; 32], [u8; 32]) {
+) -> (B256, B256) {
     let mut state_root_leaves = Vec::new();
     let mut data_root_leaves = Vec::new();
 
@@ -52,8 +53,8 @@ pub fn get_merkle_root_commitments(
 
     // Pad the leaves to a fixed size of tree_size.
     while state_root_leaves.len() < tree_size {
-        state_root_leaves.push(vec![0u8; 32]);
-        data_root_leaves.push(vec![0u8; 32]);
+        state_root_leaves.push(B256::from([0u8; 32]));
+        data_root_leaves.push(B256::from([0u8; 32]));
     }
 
     // Compute the Merkle root for state root leaves.

@@ -57,11 +57,11 @@ async fn generate_and_verify_proof(trusted_block: u32, target_block: u32) -> any
     let (pk, vk) = client.setup(HEADER_RANGE_ELF);
     let mut proof = client.prove(&pk, stdin)?;
 
-    // Read outputs.
-    let mut state_root_commitment = [0u8; 32];
-    let mut data_root_commitment = [0u8; 32];
-    proof.public_values.read_slice(&mut state_root_commitment);
-    proof.public_values.read_slice(&mut data_root_commitment);
+    // // Read outputs.
+    // let mut state_root_commitment = [0u8; 32];
+    // let mut data_root_commitment = [0u8; 32];
+    // proof.public_values.read_slice(&mut state_root_commitment);
+    // proof.public_values.read_slice(&mut data_root_commitment);
 
     // Verify proof.
     client.verify(&proof, &vk)?;

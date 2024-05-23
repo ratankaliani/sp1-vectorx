@@ -5,6 +5,7 @@ pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 pub mod consts;
 use consts::{PUBKEY_LENGTH, VALIDATOR_LENGTH};
+use alloy_primitives::B256;
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid.
 pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
@@ -19,7 +20,7 @@ pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signatur
 pub fn verify_simple_justification(
     justification: CircuitJustification,
     authority_set_id: u64,
-    current_authority_set_hash: Vec<u8>,
+    current_authority_set_hash: B256,
 ) {
     // 1. Verify the authority set commitment is valid.
     assert_eq!(
