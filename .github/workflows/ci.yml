@@ -41,40 +41,28 @@ jobs:
           override: true
 
       - name: Run cargo test (rotate)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features "ci"
+        run: cargo test --release --features "ci"
         env:
           RUST_LOG: 1
           RUST_BACKTRACE: 1
         working-directory: ./rotate
 
       - name: Run cargo test (script)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features "ci"
+        run: cargo test --release --features "ci"
         env:
           RUST_LOG: 1
           RUST_BACKTRACE: 1
         working-directory: ./script
 
       - name: Run cargo test (primitives)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features "ci"
+        run: cargo test --release --features "ci"
         env:
           RUST_LOG: 1
           RUST_BACKTRACE: 1
         working-directory: ./primitives
 
       - name: Run cargo test (header-range)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --release --features "ci"
+        run: cargo test --release --features "ci"
         env:
           RUST_LOG: 1
           RUST_BACKTRACE: 1
@@ -112,73 +100,49 @@ jobs:
           components: rustfmt, clippy
 
       - name: Run cargo fmt (rotate)
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./rotate
 
       - name: Run cargo fmt (script)
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./script
 
       - name: Run cargo fmt (primitives)
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./primitives
 
       - name: Run cargo fmt (header-range)
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo fmt --all -- --check
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./header-range
 
       - name: Run cargo clippy (rotate)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-features --all-targets -- -D warnings -A incomplete-features
+        run: cargo clippy --all-features --all-targets -- -D warnings -A incomplete-features
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./rotate
 
       - name: Run cargo clippy (script)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-features --all-targets -- -D warnings -A incomplete-features
+        run: cargo clippy --all-features --all-targets -- -D warnings -A incomplete-features
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./script
 
       - name: Run cargo clippy (primitives)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-features --all-targets -- -D warnings -A incomplete-features
+        run: cargo clippy --all-features --all-targets -- -D warnings -A incomplete-features
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./primitives
 
       - name: Run cargo clippy (header-range)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all-features --all-targets -- -D warnings -A incomplete-features
+        run: cargo clippy --all-features --all-targets -- -D warnings -A incomplete-features
         env:
           CARGO_INCREMENTAL: 1
         working-directory: ./header-range
