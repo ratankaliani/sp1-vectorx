@@ -18,13 +18,7 @@ use sp1_vectorx_primitives::{
 pub fn main() {
     let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
 
-    let mut encoded_headers = Vec::new();
-    // Read the encoded headers.
-    for _ in 0..request_data.target_block - request_data.trusted_block + 1 {
-        let header_bytes = sp1_zkvm::io::read_vec();
-        encoded_headers.push(header_bytes);
-    }
-
+    let encoded_headers = request_data.encoded_headers;
     let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
 
     // 1. Decode the headers using: https://github.com/succinctlabs/vectorx/blob/fb83641259aef1f5df33efa73c23d90973d64e24/circuits/builder/decoder.rs#L104-L157
