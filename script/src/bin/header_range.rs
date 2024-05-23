@@ -3,6 +3,7 @@ use codec::Encode;
 use crypto::{blake2b::Blake2b, digest::Digest};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
+use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
 use sp1_vectorx_script::input::RpcDataFetcher;
 use subxt::config::Header;
 
@@ -22,7 +23,7 @@ async fn get_header_range_proof_request_data(
 
     let num_headers = target_block - trusted_block + 1;
     // TODO: Should be fetched from the contract when we take this to production.
-    let merkle_tree_size = fetcher.get_merkle_tree_size(num_headers);
+    let merkle_tree_size = get_merkle_tree_size(num_headers);
 
     let headers = fetcher
         .get_block_headers_range(trusted_block, target_block)

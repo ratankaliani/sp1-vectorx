@@ -1,7 +1,7 @@
 use anyhow::Result;
 use ethers::types::H256;
 use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
-use sp1_vectorx_primitives::verify_signature;
+use sp1_vectorx_primitives::{verify_signature, compute_authority_set_commitment};
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
@@ -21,17 +21,6 @@ use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
 use crate::redis::RedisClient;
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 
-// Compute the chained hash of the authority set.
-pub fn compute_authority_set_hash_from_authorities(authorities: &[[u8; 32]]) -> Vec<u8> {
-    let mut hash_so_far = Vec::new();
-    for authority in authorities {
-        let mut hasher = sha2::Sha256::new();
-        hasher.update(hash_so_far);
-        hasher.update(authority);
-        hash_so_far = hasher.finalize().to_vec();
-    }
-    hash_so_far
-}
 
 pub struct RpcDataFetcher {
     pub client: AvailClient,
@@ -485,7 +474,7 @@ impl RpcDataFetcher {
             );
         }
 
-        let new_authority_set_hash = compute_authority_set_hash_from_authorities(&new_authorities);
+        let new_authority_set_hash = compute_authority_set_commitment(num_authorities, &new_authorities);
 
         HeaderRotateData {
             header_bytes,
