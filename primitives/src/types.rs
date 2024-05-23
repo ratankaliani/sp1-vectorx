@@ -14,7 +14,7 @@ pub struct HeaderRotateData {
     pub header_bytes: Vec<u8>, // Encoded header bytes for the epoch end block
     pub num_authorities: usize,
     pub new_authority_set_hash: Vec<u8>,
-    pub pubkeys: Vec<[u8; 32]>, 
+    pub pubkeys: Vec<[u8; 32]>,
     pub consensus_log_position: usize, // Index of the new authority set data in the header bytes
 }
 
@@ -27,7 +27,7 @@ pub struct CircuitJustification {
     pub signatures: Vec<Option<Vec<u8>>>,
     pub num_authorities: usize,
     pub current_authority_set_hash: Vec<u8>,
-    pub block_number: u32, // Block number associated with the justification
+    pub block_number: u32,    // Block number associated with the justification
     pub block_hash: [u8; 32], // Hash of the block associated with the justification
 }
 
@@ -44,8 +44,8 @@ pub struct HeaderRangeProofRequestData {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DecodedHeaderData {
-    pub block_number: u32, // Block number of the decoded header
+    pub block_number: u32,    // Block number of the decoded header
     pub parent_hash: Vec<u8>, // Hash of the parent block
-    pub state_root: Vec<u8>, // State root of the block
-    pub data_root: Vec<u8>, // Data root of the block
+    pub state_root: Vec<u8>,  // State root of the block
+    pub data_root: Vec<u8>,   // Data root of the block
 }

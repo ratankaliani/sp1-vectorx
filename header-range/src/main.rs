@@ -12,7 +12,6 @@ use sp1_vectorx_primitives::{
     verify_simple_justification,
 };
 
-
 /// Verify the justification from the current authority set on target block and compute the
 /// {state, data}_root_commitments over the range [trusted_block + 1, target_block] inclusive.
 pub fn main() {

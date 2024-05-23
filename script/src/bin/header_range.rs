@@ -1,12 +1,13 @@
 //! A simple script to generate and verify the proof of a given program.
-use crypto::{blake2b::Blake2b, digest::Digest};
 use codec::Encode;
+use crypto::{blake2b::Blake2b, digest::Digest};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
 use sp1_vectorx_script::input::RpcDataFetcher;
 use subxt::config::Header;
 
-const HEADER_RANGE_ELF: &[u8] = include_bytes!("../../../header-range/elf/riscv32im-succinct-zkvm-elf");
+const HEADER_RANGE_ELF: &[u8] =
+    include_bytes!("../../../header-range/elf/riscv32im-succinct-zkvm-elf");
 
 async fn get_header_range_proof_request_data(
     fetcher: &RpcDataFetcher,
@@ -39,13 +40,11 @@ async fn get_header_range_proof_request_data(
     }
 }
 
-async fn generate_and_verify_proof(
-    trusted_block: u32,
-    target_block: u32,
-) -> anyhow::Result<()> {
+async fn generate_and_verify_proof(trusted_block: u32, target_block: u32) -> anyhow::Result<()> {
     let fetcher = RpcDataFetcher::new().await;
 
-    let request_data = get_header_range_proof_request_data(&fetcher, trusted_block, target_block).await;
+    let request_data =
+        get_header_range_proof_request_data(&fetcher, trusted_block, target_block).await;
 
     let (target_justification, _) = fetcher.get_justification_data_for_block(target_block).await;
 

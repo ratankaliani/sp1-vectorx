@@ -19,7 +19,10 @@ fn get_merkle_root(leaves: Vec<Vec<u8>>) -> [u8; 32] {
 }
 
 /// Computes the simple Merkle root commitments for the state root and data root.
-pub fn get_merkle_root_commitments(decoded_headers: &[DecodedHeaderData], tree_size: usize) -> ([u8; 32], [u8; 32]) {
+pub fn get_merkle_root_commitments(
+    decoded_headers: &[DecodedHeaderData],
+    tree_size: usize,
+) -> ([u8; 32], [u8; 32]) {
     let mut state_root_leaves = Vec::new();
     let mut data_root_leaves = Vec::new();
 

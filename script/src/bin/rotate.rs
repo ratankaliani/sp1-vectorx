@@ -15,7 +15,9 @@ async fn get_rotate_input(
         .compute_authority_set_hash_for_block(epoch_end_block - 1)
         .await;
 
-    let justification = fetcher.get_justification_data_rotate(authority_set_id).await;
+    let justification = fetcher
+        .get_justification_data_rotate(authority_set_id)
+        .await;
 
     let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
 
@@ -70,8 +72,8 @@ async fn main() -> anyhow::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use sp1_vectorx_primitives::compute_authority_set_commitment;
     use super::*;
+    use sp1_vectorx_primitives::compute_authority_set_commitment;
 
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]

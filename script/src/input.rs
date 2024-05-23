@@ -569,7 +569,7 @@ impl RpcDataFetcher {
             num_authorities: new_authorities.len(),
             new_authority_set_hash,
             pubkeys: new_authorities,
-            consensus_log_position:position,
+            consensus_log_position: position,
         }
     }
 }
