@@ -68,8 +68,7 @@ pub fn main() {
 
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash: Vec<u8> = compute_authority_set_commitment(
-        rotate_input.header_rotate_data.num_authorities,
-        rotate_input.header_rotate_data.pubkeys.clone(),
+        &rotate_input.header_rotate_data.pubkeys,
     );
     let new_authority_set_hash_bytes32: [u8; 32] = new_authority_set_hash
         .clone()

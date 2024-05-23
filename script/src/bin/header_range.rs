@@ -1,6 +1,5 @@
 //! A simple script to generate and verify the proof of a given program.
 use codec::Encode;
-use crypto::{blake2b::Blake2b, digest::Digest};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;

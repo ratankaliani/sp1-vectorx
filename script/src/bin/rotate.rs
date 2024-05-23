@@ -85,8 +85,7 @@ mod tests {
 
         // Generate next authority set hash.
         let generated_next_authority_set_hash_bytes32 = compute_authority_set_commitment(
-            header_rotate_data.num_authorities,
-            header_rotate_data.pubkeys.clone(),
+            &header_rotate_data.pubkeys,
         );
         let generated_next_authority_set_hash =
             hex::encode(generated_next_authority_set_hash_bytes32);

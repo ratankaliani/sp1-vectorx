@@ -14,7 +14,6 @@ use avail_subxt::{api, RpcParams};
 use codec::{Compact, Decode, Encode};
 
 use futures::future::join_all;
-use sha2::{Digest, Sha256};
 use sp_core::ed25519;
 
 use crate::consts::{HASH_SIZE, PUBKEY_LENGTH, VALIDATOR_LENGTH};
@@ -200,15 +199,8 @@ impl RpcDataFetcher {
     /// that validates the next block after the given block number.
     pub async fn compute_authority_set_hash_for_block(&self, block_number: u32) -> H256 {
         let authorities = self.get_authorities(block_number).await;
-
-        let mut hash_so_far = Vec::new();
-        for authority in authorities {
-            let mut hasher = sha2::Sha256::new();
-            hasher.update(hash_so_far);
-            hasher.update(authority);
-            hash_so_far = hasher.finalize().to_vec();
-        }
-        H256::from_slice(&hash_so_far)
+        let hash = compute_authority_set_commitment(&authorities);
+        H256::from_slice(&hash)
     }
 
     /// Get the justification data necessary for the circuit using GrandpaJustification and the block number.
@@ -474,7 +466,7 @@ impl RpcDataFetcher {
             );
         }
 
-        let new_authority_set_hash = compute_authority_set_commitment(num_authorities, &new_authorities);
+        let new_authority_set_hash = compute_authority_set_commitment(&new_authorities);
 
         HeaderRotateData {
             header_bytes,

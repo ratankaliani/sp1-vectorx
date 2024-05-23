@@ -64,13 +64,8 @@ pub fn verify_simple_justification(
 
 /// Compute the new authority set hash.
 pub fn compute_authority_set_commitment(
-    num_active_authorities: usize,
-    pubkeys: Vec<[u8; 32]>,
+    pubkeys: &Vec<[u8; 32]>,
 ) -> Vec<u8> {
-    assert!(
-        num_active_authorities > 0,
-        "There must be at least one authority"
-    );
     let mut commitment_so_far = Sha256::digest(pubkeys[0]).to_vec();
     for pubkey in pubkeys.iter().skip(1) {
         let mut input_to_hash = Vec::new();
