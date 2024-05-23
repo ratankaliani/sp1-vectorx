@@ -54,6 +54,14 @@ impl RpcDataFetcher {
         }
     }
 
+    pub fn get_merkle_tree_size(&self, num_headers: u32) -> u32 {
+        let mut size = 1;
+        while size < num_headers {
+            size *= 2;
+        }
+        size
+    }
+
     // This function returns the last block justified by target_authority_set_id. This block
     // also specifies the new authority set, which starts justifying after this block.
     // Returns 0 if curr_authority_set_id <= target_authority_set_id.

@@ -24,7 +24,7 @@ async fn main() {
 
     let trusted_header = fetcher.get_header(trusted_block).await;
     let trusted_header_hash = trusted_header.hash();
-
+    
     let (authority_set_id, authority_set_hash) = fetcher
         .get_authority_set_data_for_block(trusted_block)
         .await;
@@ -36,6 +36,9 @@ async fn main() {
         .get_block_headers_range(trusted_block, target_block)
         .await;
     let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
+
+    let num_headers = target_block - trusted_block + 1;
+    let header_range_commitment_tree_size = fetcher.get_merkle_tree_size(num_headers);
 
     // Generate proof.
     let mut stdin = SP1Stdin::new();
