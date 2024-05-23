@@ -64,7 +64,7 @@ pub fn verify_simple_justification(
 
 /// Compute the new authority set hash.
 pub fn compute_authority_set_commitment(
-    pubkeys: &Vec<[u8; 32]>,
+    pubkeys: &[[u8; 32]],
 ) -> Vec<u8> {
     let mut commitment_so_far = Sha256::digest(pubkeys[0]).to_vec();
     for pubkey in pubkeys.iter().skip(1) {
