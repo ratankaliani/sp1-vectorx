@@ -51,3 +51,80 @@ pub fn get_merkle_root_commitments(
 
     (state_root_commitment, data_root_commitment)
 }
+
+// TODO: Should be removed when we read header_range_tree_commitment_size from the contract.
+pub fn get_merkle_tree_size(num_headers: u32) -> usize {
+    let mut size = 1;
+    while size < num_headers {
+        size *= 2;
+    }
+    size.try_into().unwrap()
+}
+
+// Computes the simple Merkle root of the leaves.
+// If the number of leaves is not a power of 2, the leaves are extended with 0s to the next power of 2.
+pub fn get_merkle_root(leaves: Vec<Vec<u8>>) -> Vec<u8> {
+    if leaves.is_empty() {
+        return vec![];
+    }
+
+    // Extend leaves to a power of 2.
+    let mut leaves = leaves;
+    while leaves.len().count_ones() != 1 {
+        leaves.push([0u8; 32].to_vec());
+    }
+
+    // In VectorX, the leaves are not hashed.
+    let mut nodes = leaves.clone();
+    while nodes.len() > 1 {
+        nodes = (0..nodes.len() / 2)
+            .map(|i| {
+                let mut hasher = Sha256::new();
+                hasher.update(&nodes[2 * i]);
+                hasher.update(&nodes[2 * i + 1]);
+                hasher.finalize().to_vec()
+            })
+            .collect();
+    }
+
+    nodes[0].clone()
+}
+
+/// Get the state root commitment and data root commitment for the range [start_block + 1, end_block].
+/// Returns a tuple of the state root commitment and data root commitment.
+pub async fn get_merkle_root_commitments(
+    &self,
+    header_range_commitment_tree_size: u32,
+    start_block: u32,
+    end_block: u32,
+) -> (Vec<u8>, Vec<u8>) {
+    // Assert header_range_commitment_tree_size is a power of 2.
+    assert!(header_range_commitment_tree_size.is_power_of_two());
+
+    if end_block - start_block > header_range_commitment_tree_size {
+        panic!("Range too large!");
+    }
+
+    let headers = self
+        .get_block_headers_range(start_block + 1, end_block)
+        .await;
+
+    let mut data_root_leaves = Vec::new();
+    let mut state_root_leaves = Vec::new();
+    let num_headers = headers.len();
+    for header in headers {
+        data_root_leaves.push(header.data_root().0.to_vec());
+        state_root_leaves.push(header.state_root.0.to_vec());
+    }
+
+    for _ in num_headers..header_range_commitment_tree_size as usize {
+        data_root_leaves.push([0u8; 32].to_vec());
+        state_root_leaves.push([0u8; 32].to_vec());
+    }
+
+    // Uses the simple merkle tree implementation.
+    (
+        Self::get_merkle_root(state_root_leaves),
+        Self::get_merkle_root(data_root_leaves),
+    )
+}
