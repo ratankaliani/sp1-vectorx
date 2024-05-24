@@ -1,7 +1,7 @@
 use sha2::{Digest, Sha256};
 
 use crate::types::DecodedHeaderData;
-use alloy_primitives::{B256};
+use alloy_primitives::B256;
 
 // Computes the simple Merkle root of the leaves.
 // If the number of leaves is not a power of 2, the leaves are extended with 0s to the next power of 2.
@@ -22,8 +22,8 @@ pub fn get_merkle_root(leaves: Vec<B256>) -> B256 {
         nodes = (0..nodes.len() / 2)
             .map(|i| {
                 let mut hasher = Sha256::new();
-                hasher.update(&nodes[2 * i]);
-                hasher.update(&nodes[2 * i + 1]);
+                hasher.update(nodes[2 * i]);
+                hasher.update(nodes[2 * i + 1]);
                 B256::from_slice(&hasher.finalize())
             })
             .collect();
@@ -41,8 +41,8 @@ pub fn get_merkle_root_commitments(
     let mut data_root_leaves = Vec::new();
 
     for header in decoded_headers {
-        state_root_leaves.push(header.state_root.clone());
-        data_root_leaves.push(header.data_root.clone());
+        state_root_leaves.push(header.state_root);
+        data_root_leaves.push(header.data_root);
     }
 
     // Confirm tree_size is a power of 2.

@@ -15,7 +15,7 @@ use avail_subxt::{api, RpcParams};
 use codec::{Compact, Decode, Encode};
 
 use futures::future::join_all;
-use sp_core::{ed25519};
+use sp_core::ed25519;
 use ethers::types::H256;
 use alloy_primitives::{B256, B512};
 use crate::redis::RedisClient;
@@ -199,8 +199,7 @@ impl RpcDataFetcher {
     /// that validates the next block after the given block number.
     pub async fn compute_authority_set_hash_for_block(&self, block_number: u32) -> B256 {
         let authorities = self.get_authorities(block_number).await;
-        let hash = compute_authority_set_commitment(&authorities);
-        hash
+        compute_authority_set_commitment(&authorities)
     }
 
     /// Get the justification data necessary for the circuit using GrandpaJustification and the block number.
