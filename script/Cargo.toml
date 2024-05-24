@@ -47,13 +47,13 @@ clap = "4.4.9"
 futures = "0.3.30"
 async-trait = "0.1.77"
 ed25519-dalek = "2.1.1"
-ethers = "2.0.14"
 rust-crypto = "0.2"
 redis = { version = "0.25.3", features = [
     "tokio-native-tls-comp",
     "json",
     "tokio-comp",
 ] }
+ethers = "2.0.14"
 
 [build-dependencies]
 sp1-helper = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }

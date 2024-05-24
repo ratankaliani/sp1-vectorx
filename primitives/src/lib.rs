@@ -66,13 +66,14 @@ pub fn verify_simple_justification(
 }
 
 /// Compute the new authority set hash.
-pub fn compute_authority_set_commitment(pubkeys: &[[u8; 32]]) -> Vec<u8> {
-    let mut commitment_so_far = Sha256::digest(pubkeys[0]).to_vec();
+/// Compute the new authority set hash.
+pub fn compute_authority_set_commitment(pubkeys: &[B256]) -> B256 {
+    let mut commitment_so_far = B256::from_slice(&Sha256::digest(pubkeys[0]));
     for pubkey in pubkeys.iter().skip(1) {
         let mut input_to_hash = Vec::new();
-        input_to_hash.extend_from_slice(&commitment_so_far);
-        input_to_hash.extend_from_slice(pubkey);
-        commitment_so_far = Sha256::digest(&input_to_hash).to_vec();
+        input_to_hash.extend_from_slice(commitment_so_far.as_slice());
+        input_to_hash.extend_from_slice(pubkey.as_slice());
+        commitment_so_far = B256::from_slice(&Sha256::digest(&input_to_hash));
     }
     commitment_so_far
 }
@@ -152,12 +153,12 @@ pub fn decode_scale_compact_int(bytes: &[u8]) -> (u64, usize) {
 }
 
 /// Verify that the encoded validators match the provided pubkeys, have the correct weight, and the delay is zero.
-pub fn verify_encoded_validators(header_bytes: &[u8], start_cursor: usize, pubkeys: &[[u8; 32]]) {
+pub fn verify_encoded_validators(header_bytes: &[u8], start_cursor: usize, pubkeys: &Vec<B256>) {
     let mut cursor = start_cursor;
     for pubkey in pubkeys {
-        let extracted_pubkey = &header_bytes[cursor..cursor + PUBKEY_LENGTH];
+        let extracted_pubkey = B256::from_slice(&header_bytes[cursor..cursor + PUBKEY_LENGTH]);
         // Assert that the extracted pubkey matches the expected pubkey.
-        assert_eq!(extracted_pubkey, pubkey);
+        assert_eq!(extracted_pubkey, *pubkey);
         let extracted_weight = &header_bytes[cursor + PUBKEY_LENGTH..cursor + VALIDATOR_LENGTH];
         // All validating voting weights in Avail are 1.
         assert_eq!(extracted_weight, &[1u8, 0, 0, 0, 0, 0, 0, 0]);

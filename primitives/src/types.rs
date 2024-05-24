@@ -1,4 +1,4 @@
-use alloy_primitives::B256;
+use alloy_primitives::{B256, B512};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -25,7 +25,7 @@ pub struct CircuitJustification {
     pub authority_set_id: u64,
     pub signed_message: Vec<u8>, // Message signed by authority set.
     pub pubkeys: Vec<B256>,
-    pub signatures: Vec<Option<B256>>,
+    pub signatures: Vec<Option<B512>>,
     pub num_authorities: usize,
     pub current_authority_set_hash: B256,
     pub block_number: u32,    // Block number associated with the justification

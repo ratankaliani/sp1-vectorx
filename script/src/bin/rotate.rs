@@ -23,7 +23,7 @@ async fn get_rotate_input(
 
     Ok(RotateInput {
         current_authority_set_id: authority_set_id,
-        current_authority_set_hash: authority_set_hash.0.to_vec(),
+        current_authority_set_hash: authority_set_hash,
         justification,
         header_rotate_data,
     })

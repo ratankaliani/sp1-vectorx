@@ -5,6 +5,7 @@ use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
 use sp1_vectorx_script::input::RpcDataFetcher;
 use subxt::config::Header;
+use alloy_primitives::B256;
 
 const HEADER_RANGE_ELF: &[u8] =
     include_bytes!("../../../header-range/elf/riscv32im-succinct-zkvm-elf");
@@ -15,7 +16,7 @@ async fn get_header_range_proof_request_data(
     target_block: u32,
 ) -> HeaderRangeProofRequestData {
     let trusted_header = fetcher.get_header(trusted_block).await;
-    let trusted_header_hash = trusted_header.hash();
+    let trusted_header_hash = B256::from_slice(&trusted_header.hash().0);
     let (authority_set_id, authority_set_hash) = fetcher
         .get_authority_set_data_for_block(trusted_block)
         .await;
@@ -32,8 +33,8 @@ async fn get_header_range_proof_request_data(
     HeaderRangeProofRequestData {
         trusted_block,
         target_block,
-        trusted_header_hash: trusted_header_hash.0,
-        authority_set_hash: authority_set_hash.0,
+        trusted_header_hash,
+        authority_set_hash,
         authority_set_id,
         merkle_tree_size,
         encoded_headers,
@@ -55,7 +56,7 @@ async fn generate_and_verify_proof(trusted_block: u32, target_block: u32) -> any
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(HEADER_RANGE_ELF);
-    let mut proof = client.prove(&pk, stdin)?;
+    let proof = client.prove(&pk, stdin)?;
 
     // // Read outputs.
     // let mut state_root_commitment = [0u8; 32];
