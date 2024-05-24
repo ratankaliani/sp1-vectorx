@@ -3,6 +3,7 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
+use alloy_primitives::B256;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int, types::RotateInput,
     verify_encoded_validators, verify_simple_justification,
@@ -13,7 +14,7 @@ fn verify_encoding_epoch_end_header(
     header_bytes: &[u8],
     start_cursor: usize,
     num_authorities: u64,
-    pubkeys: Vec<[u8; 32]>,
+    pubkeys: Vec<B256>,
 ) {
     // Verify the epoch end header's consensus log is formatted correctly before the new authority set hash bytes.
     let mut cursor = start_cursor;
@@ -55,12 +56,8 @@ pub fn main() {
     let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
 
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
-    let new_authority_set_hash: Vec<u8> =
+    let new_authority_set_hash =
         compute_authority_set_commitment(&rotate_input.header_rotate_data.pubkeys);
-    let new_authority_set_hash_bytes32: [u8; 32] = new_authority_set_hash
-        .clone()
-        .try_into()
-        .expect("Failed to convert hash to bytes32");
 
     // Verify the provided justification is valid.
     verify_simple_justification(
@@ -77,5 +74,5 @@ pub fn main() {
         rotate_input.header_rotate_data.pubkeys.clone(),
     );
 
-    sp1_zkvm::io::commit_slice(&new_authority_set_hash_bytes32);
+    sp1_zkvm::io::commit(&new_authority_set_hash);
 }

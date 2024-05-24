@@ -1400,6 +1400,7 @@ dependencies = [
 name = "sp1-vectorx-rotate-program"
 version = "0.1.0"
 dependencies = [
+ "alloy-primitives",
  "blake2",
  "ed25519-consensus",
  "sha2 0.10.8",
