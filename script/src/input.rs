@@ -425,11 +425,8 @@ impl RpcDataFetcher {
                     // Follows the encoding format: https://docs.substrate.io/reference/scale-codec/#fn-1
                     // If the number of authorities is <=63, the compact encoding is 1 byte.
                     // If the number of authorities is >63 & < 2^14, the compact encoding is 2 bytes.
-                    let mut cursor = 1 + encoded_num_authorities_len;
-                    let authorities_bytes = &value[cursor..];
-
-                    // Cursor is set to 0 because we're passing in authorities_bytes, which is already offset by the cursor.
-                    verify_encoded_validators(authorities_bytes, 0, &new_authorities);
+                    let cursor = 1 + encoded_num_authorities_len;
+                    verify_encoded_validators(&value, cursor, &new_authorities);
 
                     break;
                 }
