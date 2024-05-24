@@ -4,8 +4,8 @@ pub mod merkle;
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 pub mod consts;
-use consts::{PUBKEY_LENGTH, VALIDATOR_LENGTH};
 use alloy_primitives::B256;
+use consts::{PUBKEY_LENGTH, VALIDATOR_LENGTH};
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid.
 pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
@@ -68,14 +68,14 @@ pub fn verify_simple_justification(
 /// Compute the new authority set hash.
 /// Compute the new authority set hash.
 pub fn compute_authority_set_commitment(pubkeys: &[B256]) -> B256 {
-    let mut commitment_so_far = B256::from_slice(&Sha256::digest(pubkeys[0]));
+    let mut commitment_so_far = Sha256::digest(pubkeys[0]).to_vec();
     for pubkey in pubkeys.iter().skip(1) {
         let mut input_to_hash = Vec::new();
-        input_to_hash.extend_from_slice(commitment_so_far.as_slice());
+        input_to_hash.extend_from_slice(&commitment_so_far);
         input_to_hash.extend_from_slice(pubkey.as_slice());
-        commitment_so_far = B256::from_slice(&Sha256::digest(&input_to_hash));
+        commitment_so_far = Sha256::digest(&input_to_hash).to_vec();
     }
-    commitment_so_far
+    B256::from_slice(&commitment_so_far)
 }
 
 pub fn decode_precommit(precommit: Vec<u8>) -> ([u8; 32], u32, u64, u64) {

@@ -1,11 +1,11 @@
 //! A simple script to generate and verify the proof of a given program.
+use alloy_primitives::B256;
 use codec::Encode;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
+use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
 use sp1_vectorx_script::input::RpcDataFetcher;
 use subxt::config::Header;
-use alloy_primitives::B256;
 
 const HEADER_RANGE_ELF: &[u8] =
     include_bytes!("../../../header-range/elf/riscv32im-succinct-zkvm-elf");
@@ -57,12 +57,6 @@ async fn generate_and_verify_proof(trusted_block: u32, target_block: u32) -> any
     let client = ProverClient::new();
     let (pk, vk) = client.setup(HEADER_RANGE_ELF);
     let proof = client.prove(&pk, stdin)?;
-
-    // // Read outputs.
-    // let mut state_root_commitment = [0u8; 32];
-    // let mut data_root_commitment = [0u8; 32];
-    // proof.public_values.read_slice(&mut state_root_commitment);
-    // proof.public_values.read_slice(&mut data_root_commitment);
 
     // Verify proof.
     client.verify(&proof, &vk)?;
