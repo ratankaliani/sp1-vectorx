@@ -1,4 +1,4 @@
-use alloy_sol_types::{sol, SolStruct, SolValue};
+use alloy_sol_types::{sol};
 
 sol! {
     struct HeaderRangeOutputs {

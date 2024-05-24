@@ -3,7 +3,7 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
-use alloy_primitives::{B256};
+use alloy_primitives::B256;
 use alloy_sol_types::SolValue;
 use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
@@ -101,16 +101,16 @@ pub fn main() {
 
 /// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
-    let parent_hash = header_bytes[..32].to_vec();
+    let parent_hash = B256::from_slice(&header_bytes[..32]);
 
     let mut position = 32;
 
     let (block_nb, num_bytes) = decode_scale_compact_int(&header_bytes[32..37]);
     position += num_bytes;
 
-    let state_root = header_bytes[position..position + 32].to_vec();
+    let state_root = B256::from_slice(&header_bytes[position..position + 32]);
 
-    let data_root = header_bytes[header_bytes.len() - 32..header_bytes.len()].to_vec();
+    let data_root = B256::from_slice(&header_bytes[header_bytes.len() - 32..header_bytes.len()]);
 
     DecodedHeaderData {
         block_number: block_nb as u32,
