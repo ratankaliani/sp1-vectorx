@@ -71,8 +71,8 @@ async fn generate_and_verify_proof(trusted_block: u32, target_block: u32) -> any
 async fn main() -> anyhow::Result<()> {
     setup_logger();
 
-    let trusted_block = 237600;
-    let target_block = 237960;
+    let trusted_block = 272355;
+    let target_block = 272534;
 
     generate_and_verify_proof(trusted_block, target_block).await?;
 
