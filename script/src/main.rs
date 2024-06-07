@@ -5,6 +5,7 @@ use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
 use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
 use sp1_vectorx_primitives::types::RotateInput;
+use sp1_vectorx_primitives::types::HeaderRangeOutputs;
 use sp1_vectorx_script::input::{RpcDataFetcher};
 use subxt::config::Header;
 
@@ -68,7 +69,7 @@ async fn generate_and_verify_proof(
     // Read outputs.
     let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
     let _new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
-    let _header_range_outputs = proof.public_values.read::<Vec<u8>>();
+    // let header_range_outputs: HeaderRangeOutputs = proof.public_values.read::<HeaderRangeOutputs>();
 
     // Verify proof.
     client.verify(&proof, &vk)?;

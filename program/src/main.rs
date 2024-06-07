@@ -3,7 +3,6 @@
 #![no_main]
 sp1_zkvm::entrypoint!(main);
 
-use crate::types::HeaderRangeOutputs;
 use alloy_primitives::B256;
 use alloy_sol_types::SolValue;
 use blake2::digest::{Update, VariableOutput};
@@ -12,9 +11,9 @@ use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int,
     types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData, RotateInput},
-    verify_encoded_validators, verify_simple_justification,
+    verify_encoded_validators, verify_simple_justification, types::HeaderRangeOutputs,
 };
-mod types;
+
 
 /// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
@@ -190,7 +189,7 @@ pub fn main() {
 
     let new_authority_set_hash = verify_rotation(rotate_input);
     let header_range_outputs = verify_header_range(request_data, target_justification);
-    
+
     sp1_zkvm::io::commit(&new_authority_set_hash);
     sp1_zkvm::io::commit(&header_range_outputs.abi_encode());
 }
