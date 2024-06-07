@@ -80,9 +80,7 @@ fn verify_encoding_epoch_end_header(
 
 /// Verify the justification from the current authority set on the epoch end header and return the new
 /// authority set commitment.
-fn verify_rotation() {
-    let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
-
+fn verify_rotation(rotate_input: RotateInput) {
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash =
         compute_authority_set_commitment(&rotate_input.header_rotate_data.pubkeys);
@@ -107,11 +105,8 @@ fn verify_rotation() {
 
 /// Verify the justification from the current authority set on target block and compute the
 /// {state, data}_root_commitments over the range [trusted_block + 1, target_block] inclusive.
-fn verify_header_range() {
- let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
-
+fn verify_header_range(request_data: HeaderRangeProofRequestData, target_justification: CircuitJustification) -> HeaderRangeOutputs {
     let encoded_headers = request_data.encoded_headers;
-    let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
 
     // 1. Decode the headers using: https://github.com/succinctlabs/vectorx/blob/fb83641259aef1f5df33efa73c23d90973d64e24/circuits/builder/decoder.rs#L104-L157
     // 2. Verify the chain of headers is connected from the trusted block to the target block.
@@ -184,10 +179,18 @@ fn verify_header_range() {
         data_root_commitment,
     };
 
-    // Commit the ABI-encoded HeaderRangeOutputs struct
-    sp1_zkvm::io::commit_slice(&outputs.abi_encode());
+    // Return the ABI-encoded HeaderRangeOutputs struct
+   outputs
 }
 
 pub fn main() {
+    let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
+    let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
+    let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
 
+    let new_authority_set_hash = verify_rotation(rotate_input);
+    let header_range_outputs = verify_header_range(request_data, target_justification);
+    
+    sp1_zkvm::io::commit(&new_authority_set_hash);
+    sp1_zkvm::io::commit(&header_range_outputs.abi_encode());
 }
