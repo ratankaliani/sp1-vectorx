@@ -20,7 +20,7 @@ pub fn verify_rotation(rotate_inputs: RotateInputs) -> B256 {
     // Verify the encoded epoch end header is formatted correctly, and that the provided new pubkeys match the encoded ones.
     verify_encoding_epoch_end_header(
         &rotate_inputs.header_rotate_data.header_bytes,
-        rotate_inputs.header_rotate_data.consensus_log_position as usize,
+        rotate_inputs.header_rotate_data.consensus_log_position,
         rotate_inputs.header_rotate_data.num_authorities as u64,
         rotate_inputs.header_rotate_data.pubkeys.clone(),
     );
