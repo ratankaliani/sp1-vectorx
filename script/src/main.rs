@@ -23,8 +23,9 @@ async fn main() -> anyhow::Result<()> {
     let mut stdin: SP1Stdin = SP1Stdin::new();
     let mut proof;
 
+    // Fetch & write inputs to proof based on the proof type.
     if proof_type == 0 {
-        // Fetch inputs for header range proof.
+        // Header range proof.
         let header_range_inputs = fetcher
             .get_header_range_inputs(trusted_block, target_block)
             .await;
@@ -34,19 +35,17 @@ async fn main() -> anyhow::Result<()> {
         stdin.write(&proof_type);
         stdin.write(&header_range_inputs);
         stdin.write(&target_justification);
-
-        proof = client.prove(&pk, stdin)?;
     } else if proof_type == 1 {
-        // Fetch inputs for rotate proof.
+        // Rotate proof.
         let rotate_input = fetcher.get_rotate_inputs(authority_set_id).await;
 
         stdin.write(&proof_type);
         stdin.write(&rotate_input);
-
-        proof = client.prove(&pk, stdin)?;
     } else {
         panic!("Invalid proof type!");
     }
+
+    proof = client.prove(&pk, stdin)?;
 
     println!("Successfully generated and verified proof for the program!");
 
