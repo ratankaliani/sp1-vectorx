@@ -11,9 +11,21 @@ use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int,
     types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData, RotateInput},
-    verify_encoded_validators, verify_simple_justification, types::HeaderRangeOutputs,
+    verify_encoded_validators, verify_simple_justification
 };
+use alloy_sol_types::{sol, SolType, SolStruct};
 
+sol! {
+    struct HeaderRangeOutputs {
+        uint32 trusted_block;
+        bytes32 trusted_header_hash;
+        uint64 authority_set_id;
+        bytes32 authority_set_hash;
+        uint32 target_block;
+        bytes32 state_root_commitment;
+        bytes32 data_root_commitment;
+    }
+}
 
 /// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
@@ -79,7 +91,7 @@ fn verify_encoding_epoch_end_header(
 
 /// Verify the justification from the current authority set on the epoch end header and return the new
 /// authority set commitment.
-fn verify_rotation(rotate_input: RotateInput) {
+fn verify_rotation(rotate_input: RotateInput) -> B256 {
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash =
         compute_authority_set_commitment(&rotate_input.header_rotate_data.pubkeys);
@@ -99,8 +111,10 @@ fn verify_rotation(rotate_input: RotateInput) {
         rotate_input.header_rotate_data.pubkeys.clone(),
     );
 
-    sp1_zkvm::io::commit(&new_authority_set_hash);
+    new_authority_set_hash
 }
+
+
 
 /// Verify the justification from the current authority set on target block and compute the
 /// {state, data}_root_commitments over the range [trusted_block + 1, target_block] inclusive.
@@ -178,7 +192,7 @@ fn verify_header_range(request_data: HeaderRangeProofRequestData, target_justifi
         data_root_commitment,
     };
 
-    // Return the ABI-encoded HeaderRangeOutputs struct
+    // Return the HeaderRangeOutputs struct
    outputs
 }
 
