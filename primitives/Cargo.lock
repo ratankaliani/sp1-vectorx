@@ -35,65 +35,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alloy-sol-macro"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30708a79919b082f2692423c8cc72fc250477e4a2ecb0d4a7244cd3cdb299965"
-dependencies = [
- "alloy-sol-macro-expander",
- "alloy-sol-macro-input",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 2.0.65",
-]
-
-[[package]]
-name = "alloy-sol-macro-expander"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c7a679ac01774ab7e00a567a918d4231ae692c5c8cedaf4e16956c3116d7896"
-dependencies = [
- "alloy-sol-macro-input",
- "const-hex",
- "heck",
- "indexmap",
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 2.0.65",
- "syn-solidity",
- "tiny-keccak",
-]
-
-[[package]]
-name = "alloy-sol-macro-input"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "356da0c2228aa6675a5faaa08a3e4061b967f924753983d72b9a18d9a3fad44e"
-dependencies = [
- "const-hex",
- "dunce",
- "heck",
- "proc-macro2",
- "quote",
- "syn 2.0.65",
- "syn-solidity",
-]
-
-[[package]]
-name = "alloy-sol-types"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6eb5e6234c0b62514992589fe1578f64d418dbc8ef5cd1ab2d7f2f568f599698"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-macro",
- "const-hex",
- "serde",
-]
-
-[[package]]
 name = "anstream"
 version = "0.6.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -567,12 +508,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
-name = "dunce"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56ce8c6da7551ec6c462cbaf3bfbc75131ebbfa1c944aeaa9dab51ca1c5f0c3b"
-
-[[package]]
 name = "ecdsa"
 version = "0.16.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -746,12 +681,6 @@ name = "hashbrown"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5274423e17b7c9fc20b6e7e208532f9b19825d82dfd615708b70edd83df41f1"
-
-[[package]]
-name = "heck"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hex"
@@ -999,30 +928,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6d37c51ca738a55da99dc0c4a34860fd675453b8b36209178c2249bb13651284"
 dependencies = [
  "toml_edit",
-]
-
-[[package]]
-name = "proc-macro-error"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
-dependencies = [
- "proc-macro-error-attr",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
- "version_check",
-]
-
-[[package]]
-name = "proc-macro-error-attr"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1be40180e52ecc98ad80b184934baf3d0d29f979574e439af5a55274b35f869"
-dependencies = [
- "proc-macro2",
- "quote",
- "version_check",
 ]
 
 [[package]]
@@ -1313,8 +1218,6 @@ name = "sp1-vectorx-primitives"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
- "alloy-sol-macro",
- "alloy-sol-types",
  "anyhow",
  "clap",
  "dotenv",
@@ -1373,18 +1276,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "syn-solidity"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6fe08d08d84f2c0a77f1e7c46518789d745c2e87a2721791ed7c3c9bc78df28"
-dependencies = [
- "paste",
- "proc-macro2",
- "quote",
- "syn 2.0.65",
 ]
 
 [[package]]

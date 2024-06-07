@@ -84,7 +84,7 @@ async fn generate_and_verify_header_range_proof(
     client.verify(&proof, &vk)?;
 
     // Save proof.
-    proof.save("header-range-proof-with-io.json")?;
+    proof.save("proof-with-io.json")?;
 
     Ok(())
 }
@@ -109,7 +109,7 @@ async fn generate_and_verify_rotate_proof(authority_set_id: u64) -> anyhow::Resu
     client.verify(&proof, &vk)?;
 
     // Save proof.
-    proof.save("rotate-proof-with-io.json")?;
+    proof.save("proof-with-io.json")?;
 
     Ok(())
 }

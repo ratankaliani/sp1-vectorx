@@ -1,19 +1,6 @@
 use alloy_primitives::{B256, B512};
 use serde::{Deserialize, Serialize};
 
-
-use alloy_sol_types::{sol, SolType, SolStruct};
-sol! {
-    struct HeaderRangeOutputs {
-        uint32 trusted_block;
-        bytes32 trusted_header_hash;
-        uint64 authority_set_id;
-        bytes32 authority_set_hash;
-        uint32 target_block;
-        bytes32 state_root_commitment;
-        bytes32 data_root_commitment;
-    }
-}
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RotateInput {
     pub current_authority_set_id: u64,
