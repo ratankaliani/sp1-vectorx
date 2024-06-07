@@ -4,14 +4,6 @@ version = "0.1.0"
 name = "sp1-vectorx-script"
 edition = "2021"
 
-[[bin]]
-name = "rotate"
-path = "src/bin/rotate.rs"
-
-[[bin]]
-name = "header_range"
-path = "src/bin/header_range.rs"
-
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
 sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", branch = "dev" }

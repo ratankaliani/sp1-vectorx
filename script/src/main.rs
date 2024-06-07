@@ -5,10 +5,10 @@ use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
 use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
 use sp1_vectorx_primitives::types::RotateInput;
-use sp1_vectorx_script::input::{RpcDataFetcher, RpcDataFetcher};
+use sp1_vectorx_script::input::{RpcDataFetcher};
 use subxt::config::Header;
 
-const ELF: &[u8] = include_bytes!("../../../program/elf/riscv32im-succinct-zkvm-elf");
+const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 async fn get_header_range_proof_request_data(
     fetcher: &RpcDataFetcher,
@@ -63,13 +63,13 @@ async fn generate_and_verify_proof(
 
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ELF);
-    let proof = client.prove(&pk, stdin)?;
+    let mut proof = client.prove(&pk, stdin)?;
 
     // Read outputs.
     let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
     let _new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
     let _header_range_outputs = proof.public_values.read::<Vec<u8>>();
-    
+
     // Verify proof.
     client.verify(&proof, &vk)?;
 
