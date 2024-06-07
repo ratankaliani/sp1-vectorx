@@ -22,45 +22,15 @@ sol! {
     }
 }
 
-async fn get_header_range_inputs(
-    fetcher: &RpcDataFetcher,
-    trusted_block: u32,
-    target_block: u32,
-) -> HeaderRangeInputs {
-    let trusted_header = fetcher.get_header(trusted_block).await;
-    let trusted_header_hash = B256::from_slice(&trusted_header.hash().0);
-    let (authority_set_id, authority_set_hash) = fetcher
-        .get_authority_set_data_for_block(trusted_block)
-        .await;
-
-    let num_headers = target_block - trusted_block + 1;
-    // TODO: Should be fetched from the contract when we take this to production.
-    let merkle_tree_size = get_merkle_tree_size(num_headers);
-
-    let headers = fetcher
-        .get_block_headers_range(trusted_block, target_block)
-        .await;
-    let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
-
-    HeaderRangeInputs {
-        trusted_block,
-        target_block,
-        trusted_header_hash,
-        authority_set_hash,
-        authority_set_id,
-        merkle_tree_size,
-        encoded_headers,
-    }
-}
-
 async fn generate_and_verify_header_range_proof(
     trusted_block: u32,
     target_block: u32,
 ) -> anyhow::Result<()> {
     let fetcher = RpcDataFetcher::new().await;
 
-    let request_data =
-        get_header_range_inputs(&fetcher, trusted_block, target_block).await;
+    let request_data = fetcher
+        .get_header_range_inputs(trusted_block, target_block)
+        .await;
 
     let (target_justification, _) = fetcher.get_justification_data_for_block(target_block).await;
 

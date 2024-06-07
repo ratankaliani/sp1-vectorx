@@ -1,25 +1,27 @@
 use anyhow::Result;
-use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRotateData};
+use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
+use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRangeInputs, HeaderRotateData};
 use sp1_vectorx_primitives::{
-    compute_authority_set_commitment, verify_encoded_validators, verify_signature, consts::HASH_SIZE
+    compute_authority_set_commitment, consts::HASH_SIZE, verify_encoded_validators,
+    verify_signature,
 };
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
 
+use crate::redis::RedisClient;
+use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
+use alloy_primitives::{B256, B512};
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
 use avail_subxt::primitives::Header;
 use avail_subxt::{api, RpcParams};
 use codec::{Compact, Decode, Encode};
-
+use ethers::types::H256;
 use futures::future::join_all;
 use sp_core::ed25519;
-use ethers::types::H256;
-use alloy_primitives::{B256, B512};
-use crate::redis::RedisClient;
-use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
+use subxt::config::Header as SubxtHeader;
 
 pub struct RpcDataFetcher {
     pub client: AvailClient,
@@ -39,6 +41,37 @@ impl RpcDataFetcher {
             client,
             redis,
             avail_chain_id,
+        }
+    }
+
+    pub async fn get_header_range_inputs(
+        &self,
+        trusted_block: u32,
+        target_block: u32,
+    ) -> HeaderRangeInputs {
+        let trusted_header = self.get_header(trusted_block).await;
+        let trusted_header_hash: alloy_primitives::FixedBytes<32> =
+            B256::from_slice(&trusted_header.hash().0);
+        let (authority_set_id, authority_set_hash) =
+            self.get_authority_set_data_for_block(trusted_block).await;
+
+        let num_headers = target_block - trusted_block + 1;
+        // TODO: Should be fetched from the contract when we take this to production.
+        let merkle_tree_size = get_merkle_tree_size(num_headers);
+
+        let headers = self
+            .get_block_headers_range(trusted_block, target_block)
+            .await;
+        let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
+
+        HeaderRangeInputs {
+            trusted_block,
+            target_block,
+            trusted_header_hash,
+            authority_set_hash,
+            authority_set_id,
+            merkle_tree_size,
+            encoded_headers,
         }
     }
 
@@ -298,7 +331,9 @@ impl RpcDataFetcher {
         let mut signatures: Vec<Option<B512>> = Vec::new();
         for i in 0..redis_justification.signatures.len() {
             if redis_justification.validator_signed[i] {
-                signatures.push(Some(B512::from_slice(redis_justification.signatures[i].clone().as_slice())));
+                signatures.push(Some(B512::from_slice(
+                    redis_justification.signatures[i].clone().as_slice(),
+                )));
             } else {
                 signatures.push(None);
             }
