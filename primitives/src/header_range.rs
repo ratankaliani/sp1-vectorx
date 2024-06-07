@@ -3,7 +3,9 @@ use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 
 use crate::merkle::get_merkle_root_commitments;
-use crate::types::{CircuitJustification, DecodedHeaderData, HeaderRangeInputs, HeaderRangeOutputs};
+use crate::types::{
+    CircuitJustification, DecodedHeaderData, HeaderRangeInputs, HeaderRangeOutputs,
+};
 use crate::{decode_scale_compact_int, verify_simple_justification};
 use alloy_sol_types::SolType;
 
@@ -12,7 +14,7 @@ use alloy_sol_types::SolType;
 pub fn verify_header_range(
     header_range_inputs: HeaderRangeInputs,
     target_justification: CircuitJustification,
-) -> Vec<u8> {
+) -> [u8; 32 * 7] {
     let encoded_headers = header_range_inputs.encoded_headers;
 
     // 1. Decode the headers using: https://github.com/succinctlabs/vectorx/blob/fb83641259aef1f5df33efa73c23d90973d64e24/circuits/builder/decoder.rs#L104-L157
@@ -48,7 +50,8 @@ pub fn verify_header_range(
 
     // Stage 2: Verify the chain of headers is connected from the trusted block to the target block.
     // Do this by checking the parent hashes are linked and the block numbers are sequential.
-    for i in 1..(header_range_inputs.target_block - header_range_inputs.trusted_block + 1) as usize {
+    for i in 1..(header_range_inputs.target_block - header_range_inputs.trusted_block + 1) as usize
+    {
         // Check the parent hashes are linked.
         assert_eq!(header_hashes[i - 1], decoded_headers_data[i].parent_hash);
         // Check the block numbers are sequential.
@@ -72,8 +75,10 @@ pub fn verify_header_range(
     );
 
     // Stage 4: Compute the simple Merkle tree commitment for the headers.
-    let (state_root_commitment, data_root_commitment) =
-        get_merkle_root_commitments(&decoded_headers_data[1..], header_range_inputs.merkle_tree_size);
+    let (state_root_commitment, data_root_commitment) = get_merkle_root_commitments(
+        &decoded_headers_data[1..],
+        header_range_inputs.merkle_tree_size,
+    );
 
     // Return the ABI encoded HeaderRangeOutputs.
     HeaderRangeOutputs::abi_encode(&(
@@ -85,6 +90,8 @@ pub fn verify_header_range(
         state_root_commitment,
         data_root_commitment,
     ))
+    .try_into()
+    .unwrap()
 }
 
 /// Decode the header into a DecodedHeaderData struct.

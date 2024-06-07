@@ -1,5 +1,5 @@
 use alloy_primitives::{B256, B512};
-use alloy_sol_types::sol;
+use alloy_sol_types::{sol, SolType, SolStruct};
 use serde::{Deserialize, Serialize};
 
 /// uint32 trusted_block;
@@ -13,12 +13,14 @@ pub type HeaderRangeOutputs = sol! {
     tuple(uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32)
 };
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ProofOutput {
-    pub proof_type: u8, // 0 for header range, 1 for new auth set 
-    pub header_range: Option<Vec<u8>>,
-    pub new_auth_set_hash: Option<B256>,
-}
+/// uint8 ProofType
+/// bytes HeaderRangeOutputs
+/// bytes32 new_auth_set_hash
+pub type ProofOutput = sol! {
+    tuple(uint8, bytes, bytes32)
+};
+
+
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RotateInputs {

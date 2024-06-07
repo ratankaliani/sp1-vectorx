@@ -1,9 +1,10 @@
 //! A simple script to generate and verify the proof of a given program.
+
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::ProofOutput;
 use sp1_vectorx_script::input::RpcDataFetcher;
-
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
+use alloy_sol_types::{sol, SolType, SolStruct};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -15,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type: u8 = 0; // 0 for header range proof, 1 for rotate proof.
+    let proof_type: u8 = 1; // 0 for header range proof, 1 for rotate proof.
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
@@ -50,10 +51,14 @@ async fn main() -> anyhow::Result<()> {
     println!("Successfully generated and verified proof for the program!");
 
     // Read outputs.
-    let outputs = proof.public_values.read::<ProofOutput>();
+    let mut output_bytes = [0u8; 384];
+    proof.public_values.read_slice(&mut output_bytes);
+    let outputs = ProofOutput::abi_decode(&output_bytes, true)?;
 
-    println!("Outputs: {:?}", outputs);
-
+    // Print outputs.
+    println!("Proof type: {}", outputs.0);
+    println!("Header range outputs: {:?}", outputs.1);
+    println!("New authority set hash: {:?}", outputs.2);
     // Verify proof.
     client.verify(&proof, &vk)?;
 
