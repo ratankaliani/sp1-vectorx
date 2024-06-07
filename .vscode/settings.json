@@ -18,7 +18,6 @@
         "incomplete-features"
     ],
     "rust-analyzer.linkedProjects": [
-
         "primitives/Cargo.toml",
         "program/Cargo.toml",
         "script/Cargo.toml",

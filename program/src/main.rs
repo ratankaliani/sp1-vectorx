@@ -5,15 +5,15 @@ sp1_zkvm::entrypoint!(main);
 
 use alloy_primitives::B256;
 use alloy_sol_types::SolValue;
+use alloy_sol_types::{sol, SolStruct, SolType};
 use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int,
     types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData, RotateInput},
-    verify_encoded_validators, verify_simple_justification
+    verify_encoded_validators, verify_simple_justification,
 };
-use alloy_sol_types::{sol, SolType, SolStruct};
 
 sol! {
     struct HeaderRangeOutputs {
@@ -114,11 +114,12 @@ fn verify_rotation(rotate_input: RotateInput) -> B256 {
     new_authority_set_hash
 }
 
-
-
 /// Verify the justification from the current authority set on target block and compute the
 /// {state, data}_root_commitments over the range [trusted_block + 1, target_block] inclusive.
-fn verify_header_range(request_data: HeaderRangeProofRequestData, target_justification: CircuitJustification) -> HeaderRangeOutputs {
+fn verify_header_range(
+    request_data: HeaderRangeProofRequestData,
+    target_justification: CircuitJustification,
+) -> HeaderRangeOutputs {
     let encoded_headers = request_data.encoded_headers;
 
     // 1. Decode the headers using: https://github.com/succinctlabs/vectorx/blob/fb83641259aef1f5df33efa73c23d90973d64e24/circuits/builder/decoder.rs#L104-L157
@@ -193,17 +194,22 @@ fn verify_header_range(request_data: HeaderRangeProofRequestData, target_justifi
     };
 
     // Return the HeaderRangeOutputs struct
-   outputs
+    outputs
 }
 
 pub fn main() {
-    let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
-    let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
-    let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
+    let header_range_proof = sp1_zkvm::io::read::<bool>();
 
-    let new_authority_set_hash = verify_rotation(rotate_input);
-    let header_range_outputs = verify_header_range(request_data, target_justification);
+    if header_range_proof {
+        let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
+        let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
 
-    sp1_zkvm::io::commit(&new_authority_set_hash);
-    sp1_zkvm::io::commit_slice(&header_range_outputs.abi_encode());
+        let header_range_outputs = verify_header_range(request_data, target_justification);
+        sp1_zkvm::io::commit_slice(&header_range_outputs.abi_encode());
+    } else {
+        let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
+
+        let new_authority_set_hash = verify_rotation(rotate_input);
+        sp1_zkvm::io::commit(&new_authority_set_hash);
+    }
 }
