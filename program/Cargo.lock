@@ -1498,6 +1498,7 @@ name = "sp1-vectorx-rotate-program"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
+ "alloy-sol-macro",
  "alloy-sol-types",
  "blake2",
  "ed25519-consensus",

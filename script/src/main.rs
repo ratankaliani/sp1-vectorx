@@ -69,7 +69,7 @@ async fn generate_and_verify_proof(
     // Read outputs.
     let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
     let _new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
-    // let header_range_outputs: HeaderRangeOutputs = proof.public_values.read::<HeaderRangeOutputs>();
+    let header_range_outputs = proof.public_values.read::<Vec<u8>>();
 
     // Verify proof.
     client.verify(&proof, &vk)?;
