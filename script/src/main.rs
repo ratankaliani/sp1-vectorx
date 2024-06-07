@@ -22,7 +22,7 @@ sol! {
     }
 }
 
-async fn get_header_range_proof_request_data(
+async fn get_header_range_inputs(
     fetcher: &RpcDataFetcher,
     trusted_block: u32,
     target_block: u32,
@@ -60,7 +60,7 @@ async fn generate_and_verify_header_range_proof(
     let fetcher = RpcDataFetcher::new().await;
 
     let request_data =
-        get_header_range_proof_request_data(&fetcher, trusted_block, target_block).await;
+        get_header_range_inputs(&fetcher, trusted_block, target_block).await;
 
     let (target_justification, _) = fetcher.get_justification_data_for_block(target_block).await;
 
@@ -90,7 +90,7 @@ async fn generate_and_verify_header_range_proof(
 
 async fn generate_and_verify_rotate_proof(authority_set_id: u64) -> anyhow::Result<()> {
     let fetcher = RpcDataFetcher::new().await;
-    let rotate_input = get_rotate_input(&fetcher, authority_set_id).await?;
+    let rotate_input = get_rotate_inputs(&fetcher, authority_set_id).await?;
 
     // Generate proof.
     let mut stdin: SP1Stdin = SP1Stdin::new();
@@ -113,7 +113,7 @@ async fn generate_and_verify_rotate_proof(authority_set_id: u64) -> anyhow::Resu
     Ok(())
 }
 
-async fn get_rotate_input(
+async fn get_rotate_inputs(
     fetcher: &RpcDataFetcher,
     authority_set_id: u64,
 ) -> anyhow::Result<RotateInputs> {
@@ -147,7 +147,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let header_range_proof = false; // true for header range proof, false for rotate proof.
+    let header_range_proof = true; // true for header range proof, false for rotate proof.
 
     if header_range_proof {
         generate_and_verify_header_range_proof(trusted_block, target_block).await?;
