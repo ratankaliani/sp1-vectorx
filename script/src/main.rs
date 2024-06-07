@@ -1,12 +1,8 @@
 //! A simple script to generate and verify the proof of a given program.
 use alloy_primitives::B256;
 use alloy_sol_types::{sol, SolType};
-use codec::Encode;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
-use sp1_vectorx_primitives::types::{HeaderRangeInputs, RotateInputs};
 use sp1_vectorx_script::input::RpcDataFetcher;
-use subxt::config::Header;
 
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
@@ -60,7 +56,7 @@ async fn generate_and_verify_header_range_proof(
 
 async fn generate_and_verify_rotate_proof(authority_set_id: u64) -> anyhow::Result<()> {
     let fetcher = RpcDataFetcher::new().await;
-    let rotate_input = get_rotate_inputs(&fetcher, authority_set_id).await?;
+    let rotate_input = fetcher.get_rotate_inputs(authority_set_id).await;
 
     // Generate proof.
     let mut stdin: SP1Stdin = SP1Stdin::new();
@@ -83,30 +79,6 @@ async fn generate_and_verify_rotate_proof(authority_set_id: u64) -> anyhow::Resu
     Ok(())
 }
 
-async fn get_rotate_inputs(
-    fetcher: &RpcDataFetcher,
-    authority_set_id: u64,
-) -> anyhow::Result<RotateInputs> {
-    let epoch_end_block = fetcher.last_justified_block(authority_set_id).await;
-
-    let authority_set_hash = fetcher
-        .compute_authority_set_hash_for_block(epoch_end_block - 1)
-        .await;
-
-    let justification = fetcher
-        .get_justification_data_rotate(authority_set_id)
-        .await;
-
-    let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
-
-    Ok(RotateInputs {
-        current_authority_set_id: authority_set_id,
-        current_authority_set_hash: authority_set_hash,
-        justification,
-        header_rotate_data,
-    })
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     setup_logger();
@@ -117,7 +89,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let header_range_proof = true; // true for header range proof, false for rotate proof.
+    let header_range_proof = false; // true for header range proof, false for rotate proof.
 
     if header_range_proof {
         generate_and_verify_header_range_proof(trusted_block, target_block).await?;

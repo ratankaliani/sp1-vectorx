@@ -1,6 +1,8 @@
 use anyhow::Result;
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
-use sp1_vectorx_primitives::types::{CircuitJustification, HeaderRangeInputs, HeaderRotateData};
+use sp1_vectorx_primitives::types::{
+    CircuitJustification, HeaderRangeInputs, HeaderRotateData, RotateInputs,
+};
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, consts::HASH_SIZE, verify_encoded_validators,
     verify_signature,
@@ -72,6 +74,25 @@ impl RpcDataFetcher {
             authority_set_id,
             merkle_tree_size,
             encoded_headers,
+        }
+    }
+
+    pub async fn get_rotate_inputs(&self, authority_set_id: u64) -> RotateInputs {
+        let epoch_end_block = self.last_justified_block(authority_set_id).await;
+
+        let authority_set_hash = self
+            .compute_authority_set_hash_for_block(epoch_end_block - 1)
+            .await;
+
+        let justification = self.get_justification_data_rotate(authority_set_id).await;
+
+        let header_rotate_data = self.get_header_rotate(authority_set_id).await;
+
+        RotateInputs {
+            current_authority_set_id: authority_set_id,
+            current_authority_set_hash: authority_set_hash,
+            justification,
+            header_rotate_data,
         }
     }
 
