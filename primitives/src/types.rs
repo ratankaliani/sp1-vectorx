@@ -28,8 +28,8 @@ pub struct CircuitJustification {
     pub signatures: Vec<Option<B512>>,
     pub num_authorities: usize,
     pub current_authority_set_hash: B256,
-    pub block_number: u32,    // Block number associated with the justification
-    pub block_hash: B256, // Hash of the block associated with the justification
+    pub block_number: u32, // Block number associated with the justification
+    pub block_hash: B256,  // Hash of the block associated with the justification
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -45,7 +45,7 @@ pub struct HeaderRangeProofRequestData {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct DecodedHeaderData {
-    pub block_number: u32,    // Block number of the decoded header
+    pub block_number: u32, // Block number of the decoded header
     pub parent_hash: B256, // Hash of the parent block
     pub state_root: B256,  // State root of the block
     pub data_root: B256,   // Data root of the block
