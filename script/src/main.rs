@@ -53,12 +53,8 @@ async fn main() -> anyhow::Result<()> {
     // Read outputs.
     let mut output_bytes = [0u8; 384];
     proof.public_values.read_slice(&mut output_bytes);
-    let outputs = ProofOutput::abi_decode(&output_bytes, true)?;
+    let _outputs = ProofOutput::abi_decode(&output_bytes, true)?;
 
-    // Print outputs.
-    println!("Proof type: {}", outputs.0);
-    println!("Header range outputs: {:?}", outputs.1);
-    println!("New authority set hash: {:?}", outputs.2);
     // Verify proof.
     client.verify(&proof, &vk)?;
 

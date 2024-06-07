@@ -33,5 +33,5 @@ pub fn main() {
         panic!("Invalid proof type!");
     }
 
-    sp1_zkvm::io::commit(&output);
+    sp1_zkvm::io::commit_slice(&output);
 }
