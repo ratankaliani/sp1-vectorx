@@ -4,7 +4,7 @@ use alloy_sol_types::{sol, SolType};
 use codec::Encode;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
-use sp1_vectorx_primitives::types::{HeaderRangeProofRequestData, RotateInput};
+use sp1_vectorx_primitives::types::{HeaderRangeInputs, RotateInputs};
 use sp1_vectorx_script::input::RpcDataFetcher;
 use subxt::config::Header;
 
@@ -26,7 +26,7 @@ async fn get_header_range_proof_request_data(
     fetcher: &RpcDataFetcher,
     trusted_block: u32,
     target_block: u32,
-) -> HeaderRangeProofRequestData {
+) -> HeaderRangeInputs {
     let trusted_header = fetcher.get_header(trusted_block).await;
     let trusted_header_hash = B256::from_slice(&trusted_header.hash().0);
     let (authority_set_id, authority_set_hash) = fetcher
@@ -42,7 +42,7 @@ async fn get_header_range_proof_request_data(
         .await;
     let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
 
-    HeaderRangeProofRequestData {
+    HeaderRangeInputs {
         trusted_block,
         target_block,
         trusted_header_hash,
@@ -116,7 +116,7 @@ async fn generate_and_verify_rotate_proof(authority_set_id: u64) -> anyhow::Resu
 async fn get_rotate_input(
     fetcher: &RpcDataFetcher,
     authority_set_id: u64,
-) -> anyhow::Result<RotateInput> {
+) -> anyhow::Result<RotateInputs> {
     let epoch_end_block = fetcher.last_justified_block(authority_set_id).await;
 
     let authority_set_hash = fetcher
@@ -129,7 +129,7 @@ async fn get_rotate_input(
 
     let header_rotate_data = fetcher.get_header_rotate(authority_set_id).await;
 
-    Ok(RotateInput {
+    Ok(RotateInputs {
         current_authority_set_id: authority_set_id,
         current_authority_set_hash: authority_set_hash,
         justification,

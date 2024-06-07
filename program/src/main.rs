@@ -11,7 +11,7 @@ use blake2::Blake2bVar;
 use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int,
-    types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData, RotateInput},
+    types::{CircuitJustification, DecodedHeaderData, HeaderRangeInputs, RotateInputs},
     verify_encoded_validators, verify_simple_justification,
 };
 
@@ -29,14 +29,13 @@ sol! {
 
 /// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
-    let parent_hash = B256::from_slice(&header_bytes[..32]);
+    let mut cursor: usize = 32;
+    let parent_hash = B256::from_slice(&header_bytes[..cursor]);
 
-    let mut position = 32;
+    let (block_nb, num_bytes) = decode_scale_compact_int(&header_bytes[cursor..cursor + 5]);
+    cursor += num_bytes;
 
-    let (block_nb, num_bytes) = decode_scale_compact_int(&header_bytes[32..37]);
-    position += num_bytes;
-
-    let state_root = B256::from_slice(&header_bytes[position..position + 32]);
+    let state_root = B256::from_slice(&header_bytes[cursor..cursor + 32]);
 
     let data_root = B256::from_slice(&header_bytes[header_bytes.len() - 32..header_bytes.len()]);
 
@@ -91,7 +90,7 @@ fn verify_encoding_epoch_end_header(
 
 /// Verify the justification from the current authority set on the epoch end header and return the new
 /// authority set commitment.
-fn verify_rotation(rotate_input: RotateInput) -> B256 {
+fn verify_rotation(rotate_input: RotateInputs) -> B256 {
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash =
         compute_authority_set_commitment(&rotate_input.header_rotate_data.pubkeys);
@@ -117,7 +116,7 @@ fn verify_rotation(rotate_input: RotateInput) -> B256 {
 /// Verify the justification from the current authority set on target block and compute the
 /// {state, data}_root_commitments over the range [trusted_block + 1, target_block] inclusive.
 fn verify_header_range(
-    request_data: HeaderRangeProofRequestData,
+    request_data: HeaderRangeInputs,
     target_justification: CircuitJustification,
 ) -> HeaderRangeOutputs {
     let encoded_headers = request_data.encoded_headers;
@@ -202,14 +201,14 @@ pub fn main() {
 
     if header_range_proof {
         // Generate a header range proof
-        let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
+        let request_data = sp1_zkvm::io::read::<HeaderRangeInputs>();
         let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
 
         let header_range_outputs = verify_header_range(request_data, target_justification);
         sp1_zkvm::io::commit_slice(&header_range_outputs.abi_encode());
     } else {
-        // Generate a rotation proof
-        let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
+        // Generate a rotate proof
+        let rotate_input = sp1_zkvm::io::read::<RotateInputs>();
 
         let new_authority_set_hash = verify_rotation(rotate_input);
         sp1_zkvm::io::commit(&new_authority_set_hash);
