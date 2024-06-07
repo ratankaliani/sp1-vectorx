@@ -11,7 +11,7 @@ use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int,
     types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData, RotateInput},
-    verify_encoded_validators, verify_simple_justification, types:: ,
+    verify_encoded_validators, verify_simple_justification, types::HeaderRangeOutputs,
 };
 
 
