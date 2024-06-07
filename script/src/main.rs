@@ -1,10 +1,10 @@
 //! A simple script to generate and verify the proof of a given program.
 
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::ProofOutput;
+use sp1_vectorx_primitives::types::{ProofOutput, ProofType};
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
-use alloy_sol_types::{sol, SolType, SolStruct};
+use alloy_sol_types::{sol, SolStruct, SolType};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type: u8 = 0; // 0 for header range proof, 1 for rotate proof.
+    let proof_type = ProofType::HeaderRangeProof;
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
@@ -25,25 +25,24 @@ async fn main() -> anyhow::Result<()> {
     let mut proof;
 
     // Fetch & write inputs to proof based on the proof type.
-    if proof_type == 0 {
-        // Header range proof.
-        let header_range_inputs = fetcher
-            .get_header_range_inputs(trusted_block, target_block)
-            .await;
-        let (target_justification, _) =
-            fetcher.get_justification_data_for_block(target_block).await;
+    match proof_type {
+        ProofType::HeaderRangeProof => {
+            let header_range_inputs = fetcher
+                .get_header_range_inputs(trusted_block, target_block)
+                .await;
+            let (target_justification, _) =
+                fetcher.get_justification_data_for_block(target_block).await;
 
-        stdin.write(&proof_type);
-        stdin.write(&header_range_inputs);
-        stdin.write(&target_justification);
-    } else if proof_type == 1 {
-        // Rotate proof.
-        let rotate_input = fetcher.get_rotate_inputs(authority_set_id).await;
+            stdin.write(&proof_type);
+            stdin.write(&header_range_inputs);
+            stdin.write(&target_justification);
+        }
+        ProofType::RotateProof => {
+            let rotate_input = fetcher.get_rotate_inputs(authority_set_id).await;
 
-        stdin.write(&proof_type);
-        stdin.write(&rotate_input);
-    } else {
-        panic!("Invalid proof type!");
+            stdin.write(&proof_type);
+            stdin.write(&rotate_input);
+        }
     }
 
     proof = client.prove(&pk, stdin)?;

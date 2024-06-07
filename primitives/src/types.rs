@@ -13,7 +13,7 @@ pub type HeaderRangeOutputs = sol! {
     tuple(uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32)
 };
 
-/// uint8 ProofType
+/// uint8 ProofType (0 = HeaderRangeProof, 1 = RotateProof)
 /// bytes HeaderRangeOutputs
 /// bytes32 new_auth_set_hash
 pub type ProofOutput = sol! {
@@ -21,6 +21,11 @@ pub type ProofOutput = sol! {
 };
 
 
+#[derive(Debug, Deserialize, Serialize)]
+pub enum ProofType {
+    HeaderRangeProof,
+    RotateProof,
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RotateInputs {
