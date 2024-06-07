@@ -201,12 +201,14 @@ pub fn main() {
     let header_range_proof = sp1_zkvm::io::read::<bool>();
 
     if header_range_proof {
+        // Generate a header range proof
         let request_data = sp1_zkvm::io::read::<HeaderRangeProofRequestData>();
         let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
 
         let header_range_outputs = verify_header_range(request_data, target_justification);
         sp1_zkvm::io::commit_slice(&header_range_outputs.abi_encode());
     } else {
+        // Generate a rotation proof
         let rotate_input: RotateInput = sp1_zkvm::io::read::<RotateInput>();
 
         let new_authority_set_hash = verify_rotation(rotate_input);
