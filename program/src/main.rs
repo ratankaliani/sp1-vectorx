@@ -24,8 +24,6 @@ pub fn main() {
 
         let header_range_outputs = verify_header_range(header_range_inputs, target_justification);
         output = ProofOutput::abi_encode(&(0, header_range_outputs, [0u8; 32]));
-        
-        sp1_zkvm::io::commit(&output);
     } else if proof_type == 1 {
         let rotate_inputs = sp1_zkvm::io::read::<RotateInputs>();
 

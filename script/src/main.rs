@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type: u8 = 1; // 0 for header range proof, 1 for rotate proof.
+    let proof_type: u8 = 0; // 0 for header range proof, 1 for rotate proof.
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
