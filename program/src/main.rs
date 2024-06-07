@@ -11,7 +11,7 @@ use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int,
     types::{CircuitJustification, DecodedHeaderData, HeaderRangeProofRequestData, RotateInput},
-    verify_encoded_validators, verify_simple_justification, types::HeaderRangeOutputs,
+    verify_encoded_validators, verify_simple_justification, types:: ,
 };
 
 
@@ -191,5 +191,5 @@ pub fn main() {
     let header_range_outputs = verify_header_range(request_data, target_justification);
 
     sp1_zkvm::io::commit(&new_authority_set_hash);
-    sp1_zkvm::io::commit(&header_range_outputs.abi_encode());
+    sp1_zkvm::io::commit_slice(&header_range_outputs.abi_encode());
 }

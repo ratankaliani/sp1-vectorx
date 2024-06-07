@@ -3,12 +3,10 @@ use alloy_primitives::B256;
 use codec::Encode;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
-use sp1_vectorx_primitives::types::HeaderRangeProofRequestData;
-use sp1_vectorx_primitives::types::RotateInput;
-use sp1_vectorx_primitives::types::HeaderRangeOutputs;
-use sp1_vectorx_script::input::{RpcDataFetcher};
+use sp1_vectorx_primitives::types::{RotateInput, HeaderRangeOutputs, HeaderRangeProofRequestData};
+use sp1_vectorx_script::input::RpcDataFetcher;
 use subxt::config::Header;
-
+use alloy_sol_types::{sol, SolType};
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 async fn get_header_range_proof_request_data(
@@ -67,9 +65,13 @@ async fn generate_and_verify_proof(
     let mut proof = client.prove(&pk, stdin)?;
 
     // Read outputs.
+    let mut mutable_buffer = [0u8; 224];
     let new_authority_set_hash_bytes32 = proof.public_values.read::<[u8; 32]>();
     let _new_authority_set_hash = hex::encode(new_authority_set_hash_bytes32);
-    let header_range_outputs = proof.public_values.read::<Vec<u8>>();
+    
+    let header_range_outputs_encoded = proof.public_values.read_slice(&mut mutable_buffer);
+    let header_range_outputs = HeaderRangeOutputs::abi_decode(&mutable_buffer, true )?;
+    println!("{:?}", header_range_outputs_encoded);
 
     // Verify proof.
     client.verify(&proof, &vk)?;

@@ -1,7 +1,6 @@
 use alloy_primitives::{B256, B512};
 use serde::{Deserialize, Serialize};
-use alloy_sol_types::sol;
-
+use alloy_sol_types::{sol, SolType};
 
 sol! {
     #[derive(Debug, Deserialize, Serialize)]
