@@ -1,8 +1,6 @@
 //! A simple script to generate and verify the proof of a given program.
-use alloy_primitives::B256;
-use alloy_sol_types::SolType;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput};
+use sp1_vectorx_primitives::types::ProofOutput;
 use sp1_vectorx_script::input::RpcDataFetcher;
 
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
@@ -17,7 +15,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type: u8 = 1; // 0 for header range proof, 1 for rotate proof.
+    let proof_type: u8 = 0; // 0 for header range proof, 1 for rotate proof.
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();

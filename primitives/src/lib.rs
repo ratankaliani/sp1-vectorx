@@ -1,9 +1,13 @@
 use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+
 use types::CircuitJustification;
+
 pub mod merkle;
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 pub mod consts;
+pub mod rotate;
+pub mod header_range;
 use alloy_primitives::B256;
 use consts::{PUBKEY_LENGTH, VALIDATOR_LENGTH};
 

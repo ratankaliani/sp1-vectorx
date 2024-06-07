@@ -8309,6 +8309,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
+ "blake2",
  "clap 4.5.4",
  "dotenv",
  "ed25519-dalek",
