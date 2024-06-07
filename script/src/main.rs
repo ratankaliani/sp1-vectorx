@@ -1,8 +1,7 @@
 //! A simple script to generate and verify the proof of a given program.
 use alloy_primitives::B256;
-use alloy_sol_types::{sol, SolStruct, SolType};
+use alloy_sol_types::{sol, SolType};
 use codec::Encode;
-use serde::{Deserialize, Serialize};
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
 use sp1_vectorx_primitives::types::{HeaderRangeProofRequestData, RotateInput};
