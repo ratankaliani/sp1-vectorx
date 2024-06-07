@@ -1,83 +1,11 @@
 //! A simple script to generate and verify the proof of a given program.
 use alloy_primitives::B256;
-use alloy_sol_types::{sol, SolType};
+use alloy_sol_types::SolType;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
+use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput};
 use sp1_vectorx_script::input::RpcDataFetcher;
 
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
-
-sol! {
-    struct HeaderRangeOutputs {
-        uint32 trusted_block;
-        bytes32 trusted_header_hash;
-        uint64 authority_set_id;
-        bytes32 authority_set_hash;
-        uint32 target_block;
-        bytes32 state_root_commitment;
-        bytes32 data_root_commitment;
-    }
-}
-
-async fn generate_and_verify_header_range_proof(
-    trusted_block: u32,
-    target_block: u32,
-) -> anyhow::Result<()> {
-    let fetcher = RpcDataFetcher::new().await;
-
-    let request_data = fetcher
-        .get_header_range_inputs(trusted_block, target_block)
-        .await;
-
-    let (target_justification, _) = fetcher.get_justification_data_for_block(target_block).await;
-
-    // Generate proof.
-    let mut stdin: SP1Stdin = SP1Stdin::new();
-    stdin.write(&true); // Flag to indicate header range proof.
-    stdin.write(&request_data);
-    stdin.write(&target_justification);
-
-    let client = ProverClient::new();
-    let (pk, vk) = client.setup(ELF);
-    let mut proof = client.prove(&pk, stdin)?;
-
-    // Read outputs.
-    let mut mutable_buffer = [0u8; 224];
-    proof.public_values.read_slice(&mut mutable_buffer);
-    let _header_range_outputs = HeaderRangeOutputs::abi_decode(&mutable_buffer, true)?;
-
-    // Verify proof.
-    client.verify(&proof, &vk)?;
-
-    // Save proof.
-    proof.save("proof-with-io.json")?;
-
-    Ok(())
-}
-
-async fn generate_and_verify_rotate_proof(authority_set_id: u64) -> anyhow::Result<()> {
-    let fetcher = RpcDataFetcher::new().await;
-    let rotate_input = fetcher.get_rotate_inputs(authority_set_id).await;
-
-    // Generate proof.
-    let mut stdin: SP1Stdin = SP1Stdin::new();
-    stdin.write(&false); // Flag to indicate rotate proof.
-    stdin.write(&rotate_input);
-
-    let client = ProverClient::new();
-    let (pk, vk) = client.setup(ELF);
-    let mut proof = client.prove(&pk, stdin)?;
-
-    // Read outputs.
-    let _new_authority_set_hash = proof.public_values.read::<B256>();
-
-    // Verify proof.
-    client.verify(&proof, &vk)?;
-
-    // Save proof.
-    proof.save("proof-with-io.json")?;
-
-    Ok(())
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -89,16 +17,51 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let header_range_proof = false; // true for header range proof, false for rotate proof.
+    let proof_type: u8 = 1; // 0 for header range proof, 1 for rotate proof.
 
-    if header_range_proof {
-        generate_and_verify_header_range_proof(trusted_block, target_block).await?;
+    let fetcher = RpcDataFetcher::new().await;
+    let client = ProverClient::new();
+    let (pk, vk) = client.setup(ELF);
+    let mut stdin: SP1Stdin = SP1Stdin::new();
+    let mut proof;
+
+    if proof_type == 0 {
+        // Fetch inputs for header range proof.
+        let header_range_inputs = fetcher
+            .get_header_range_inputs(trusted_block, target_block)
+            .await;
+        let (target_justification, _) =
+            fetcher.get_justification_data_for_block(target_block).await;
+
+        stdin.write(&proof_type);
+        stdin.write(&header_range_inputs);
+        stdin.write(&target_justification);
+
+        proof = client.prove(&pk, stdin)?;
+    } else if proof_type == 1 {
+        // Fetch inputs for rotate proof.
+        let rotate_input = fetcher.get_rotate_inputs(authority_set_id).await;
+
+        stdin.write(&proof_type);
+        stdin.write(&rotate_input);
+
+        proof = client.prove(&pk, stdin)?;
     } else {
-        generate_and_verify_rotate_proof(authority_set_id).await?;
+        panic!("Invalid proof type!");
     }
 
     println!("Successfully generated and verified proof for the program!");
 
+    // Read outputs.
+    let outputs = proof.public_values.read::<ProofOutput>();
+
+    println!("Outputs: {:?}", outputs);
+
+    // Verify proof.
+    client.verify(&proof, &vk)?;
+
+    // Save proof.
+    proof.save("proof-with-io.json")?;
     Ok(())
 }
 

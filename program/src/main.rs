@@ -4,28 +4,18 @@
 sp1_zkvm::entrypoint!(main);
 
 use alloy_primitives::B256;
-use alloy_sol_types::SolValue;
 use alloy_sol_types::{sol, SolStruct, SolType};
 use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 use sp1_vectorx_primitives::merkle::get_merkle_root_commitments;
 use sp1_vectorx_primitives::{
     compute_authority_set_commitment, decode_scale_compact_int,
-    types::{CircuitJustification, DecodedHeaderData, HeaderRangeInputs, RotateInputs},
+    types::{
+        CircuitJustification, DecodedHeaderData, HeaderRangeInputs, HeaderRangeOutputs,
+        ProofOutput, RotateInputs,
+    },
     verify_encoded_validators, verify_simple_justification,
 };
-
-sol! {
-    struct HeaderRangeOutputs {
-        uint32 trusted_block;
-        bytes32 trusted_header_hash;
-        uint64 authority_set_id;
-        bytes32 authority_set_hash;
-        uint32 target_block;
-        bytes32 state_root_commitment;
-        bytes32 data_root_commitment;
-    }
-}
 
 /// Decode the header into a DecodedHeaderData struct.
 fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
@@ -90,24 +80,24 @@ fn verify_encoding_epoch_end_header(
 
 /// Verify the justification from the current authority set on the epoch end header and return the new
 /// authority set commitment.
-fn verify_rotation(rotate_input: RotateInputs) -> B256 {
+fn verify_rotation(rotate_inputs: RotateInputs) -> B256 {
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash =
-        compute_authority_set_commitment(&rotate_input.header_rotate_data.pubkeys);
+        compute_authority_set_commitment(&rotate_inputs.header_rotate_data.pubkeys);
 
     // Verify the provided justification is valid.
     verify_simple_justification(
-        rotate_input.justification,
-        rotate_input.current_authority_set_id,
-        rotate_input.current_authority_set_hash,
+        rotate_inputs.justification,
+        rotate_inputs.current_authority_set_id,
+        rotate_inputs.current_authority_set_hash,
     );
 
     // Verify the encoded epoch end header is formatted correctly, and that the provided new pubkeys match the encoded ones.
     verify_encoding_epoch_end_header(
-        &rotate_input.header_rotate_data.header_bytes,
-        rotate_input.header_rotate_data.consensus_log_position as usize,
-        rotate_input.header_rotate_data.num_authorities as u64,
-        rotate_input.header_rotate_data.pubkeys.clone(),
+        &rotate_inputs.header_rotate_data.header_bytes,
+        rotate_inputs.header_rotate_data.consensus_log_position as usize,
+        rotate_inputs.header_rotate_data.num_authorities as u64,
+        rotate_inputs.header_rotate_data.pubkeys.clone(),
     );
 
     new_authority_set_hash
@@ -116,10 +106,10 @@ fn verify_rotation(rotate_input: RotateInputs) -> B256 {
 /// Verify the justification from the current authority set on target block and compute the
 /// {state, data}_root_commitments over the range [trusted_block + 1, target_block] inclusive.
 fn verify_header_range(
-    request_data: HeaderRangeInputs,
+    header_range_inputs: HeaderRangeInputs,
     target_justification: CircuitJustification,
-) -> HeaderRangeOutputs {
-    let encoded_headers = request_data.encoded_headers;
+) -> Vec<u8> {
+    let encoded_headers = header_range_inputs.encoded_headers;
 
     // 1. Decode the headers using: https://github.com/succinctlabs/vectorx/blob/fb83641259aef1f5df33efa73c23d90973d64e24/circuits/builder/decoder.rs#L104-L157
     // 2. Verify the chain of headers is connected from the trusted block to the target block.
@@ -146,15 +136,15 @@ fn verify_header_range(
     }
 
     // Assert the first header hash matches the trusted header hash.
-    assert_eq!(header_hashes[0], request_data.trusted_header_hash);
+    assert_eq!(header_hashes[0], header_range_inputs.trusted_header_hash);
     assert_eq!(
         decoded_headers_data[0].block_number,
-        request_data.trusted_block
+        header_range_inputs.trusted_block
     );
 
     // Stage 2: Verify the chain of headers is connected from the trusted block to the target block.
     // Do this by checking the parent hashes are linked and the block numbers are sequential.
-    for i in 1..(request_data.target_block - request_data.trusted_block + 1) as usize {
+    for i in 1..(header_range_inputs.target_block - header_range_inputs.trusted_block + 1) as usize {
         // Check the parent hashes are linked.
         assert_eq!(header_hashes[i - 1], decoded_headers_data[i].parent_hash);
         // Check the block numbers are sequential.
@@ -167,50 +157,59 @@ fn verify_header_range(
     // Check that the last header matches the target block.
     assert_eq!(
         decoded_headers_data[decoded_headers_data.len() - 1].block_number,
-        request_data.target_block
+        header_range_inputs.target_block
     );
 
     // Stage 3: Verify the justification is valid.
     verify_simple_justification(
         target_justification,
-        request_data.authority_set_id,
-        request_data.authority_set_hash,
+        header_range_inputs.authority_set_id,
+        header_range_inputs.authority_set_hash,
     );
 
     // Stage 4: Compute the simple Merkle tree commitment for the headers.
     let (state_root_commitment, data_root_commitment) =
-        get_merkle_root_commitments(&decoded_headers_data[1..], request_data.merkle_tree_size);
+        get_merkle_root_commitments(&decoded_headers_data[1..], header_range_inputs.merkle_tree_size);
 
-    // Create an instance of the HeaderRangeOutputs struct
-    let outputs = HeaderRangeOutputs {
-        trusted_block: request_data.trusted_block,
-        trusted_header_hash: request_data.trusted_header_hash,
-        authority_set_id: request_data.authority_set_id,
-        authority_set_hash: request_data.authority_set_hash,
-        target_block: request_data.target_block,
+    // Return the ABI encoded HeaderRangeOutputs.
+    HeaderRangeOutputs::abi_encode(&(
+        header_range_inputs.trusted_block,
+        header_range_inputs.trusted_header_hash,
+        header_range_inputs.authority_set_id,
+        header_range_inputs.authority_set_hash,
+        header_range_inputs.target_block,
         state_root_commitment,
         data_root_commitment,
-    };
-
-    // Return the HeaderRangeOutputs struct
-    outputs
+    ))
 }
 
 pub fn main() {
-    let header_range_proof = sp1_zkvm::io::read::<bool>();
+    let proof_type = sp1_zkvm::io::read::<u8>(); // 0 for header range proof, 1 for rotate proof.
+    let mut output: ProofOutput;
 
-    if header_range_proof {
-        // Generate a header range proof
-        let request_data = sp1_zkvm::io::read::<HeaderRangeInputs>();
+    if proof_type == 0 {
+        let header_range_inputs = sp1_zkvm::io::read::<HeaderRangeInputs>();
         let target_justification = sp1_zkvm::io::read::<CircuitJustification>();
 
-        let header_range_outputs = verify_header_range(request_data, target_justification);
-        sp1_zkvm::io::commit_slice(&header_range_outputs.abi_encode());
+        let header_range_outputs = verify_header_range(header_range_inputs, target_justification);
+        output = ProofOutput {
+            proof_type: 0,
+            header_range: Some(header_range_outputs),
+            new_auth_set_hash: None,
+        };
+        sp1_zkvm::io::commit(&output);
+    } else if proof_type == 1 {
+        let rotate_inputs = sp1_zkvm::io::read::<RotateInputs>();
+        
+        let new_authority_set_hash = verify_rotation(rotate_inputs);
+        output = ProofOutput {
+            proof_type: 1,
+            header_range: None,
+            new_auth_set_hash: Some(new_authority_set_hash),
+        };
     } else {
-        // Generate a rotate proof
-        let rotate_input = sp1_zkvm::io::read::<RotateInputs>();
-
-        let new_authority_set_hash = verify_rotation(rotate_input);
-        sp1_zkvm::io::commit(&new_authority_set_hash);
+        panic!("Invalid proof type!");
     }
+
+    sp1_zkvm::io::commit(&output);
 }

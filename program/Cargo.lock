@@ -1481,6 +1481,7 @@ name = "sp1-vectorx-primitives"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
+ "alloy-sol-types",
  "anyhow",
  "clap",
  "dotenv",
