@@ -4,7 +4,7 @@ use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::{ProofOutput, ProofType};
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
-use alloy_sol_types::{sol, SolStruct, SolType};
+use alloy_sol_types::SolType;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type = ProofType::HeaderRangeProof;
+    let proof_type = ProofType::RotateProof;
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();

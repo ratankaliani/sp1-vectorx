@@ -1,5 +1,6 @@
 use alloy_primitives::{B256, B512};
-use alloy_sol_types::{sol, SolType, SolStruct};
+use alloy_sol_types::sol;
+
 use serde::{Deserialize, Serialize};
 
 /// uint32 trusted_block;
@@ -19,7 +20,6 @@ pub type HeaderRangeOutputs = sol! {
 pub type ProofOutput = sol! {
     tuple(uint8, bytes, bytes32)
 };
-
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum ProofType {
