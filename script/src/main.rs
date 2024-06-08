@@ -1,7 +1,7 @@
 //! A simple script to generate and verify the proof of a given program.
 
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::{ProofOutput, ProofType};
+use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType};
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 use alloy_sol_types::SolType;
@@ -10,13 +10,13 @@ use alloy_sol_types::SolType;
 async fn main() -> anyhow::Result<()> {
     setup_logger();
 
-    // Supply an initial authority set id.
-    // TODO: Read from args/contract in the future. Set to 1 for testing.
+    // Supply an initial authority set id, trusted block, and target block.
+    // TODO: Read from args/contract in the future.
     let authority_set_id = 74u64;
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type = ProofType::RotateProof;
+    let proof_type = ProofType::HeaderRangeProof;
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
@@ -52,7 +52,10 @@ async fn main() -> anyhow::Result<()> {
     // Read outputs.
     let mut output_bytes = [0u8; 384];
     proof.public_values.read_slice(&mut output_bytes);
-    let _outputs = ProofOutput::abi_decode(&output_bytes, true)?;
+    let outputs = ProofOutput::abi_decode(&output_bytes, true)?;
+    
+    // Log proof outputs.
+    log_proof_outputs(outputs);
 
     // Verify proof.
     client.verify(&proof, &vk)?;
@@ -60,6 +63,22 @@ async fn main() -> anyhow::Result<()> {
     // Save proof.
     proof.save("proof-with-io.json")?;
     Ok(())
+}
+
+fn log_proof_outputs(outputs: (u8, alloy_primitives::Bytes, alloy_primitives::FixedBytes<32>)) {
+    let proof_type = ProofType::from_uint(outputs.0).unwrap();
+    match proof_type {
+        ProofType::HeaderRangeProof => {
+            let header_range_outputs = HeaderRangeOutputs::abi_decode(&outputs.1, true).unwrap();
+            println!("Proof Type: Header Range Proof");
+            println!("Header Range Outputs: {:?}", header_range_outputs);
+        }
+        ProofType::RotateProof => {
+            let new_authority_set_hash = outputs.2;
+            println!("Proof Type: Rotate Proof");
+            println!("New authority set hash: {:?}", new_authority_set_hash);
+        }
+    }
 }
 
 #[cfg(test)]

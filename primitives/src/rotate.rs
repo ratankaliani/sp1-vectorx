@@ -4,7 +4,7 @@ use crate::{compute_authority_set_commitment, decode_scale_compact_int, types::R
 
 /// Verify the justification from the current authority set on the epoch end header and return the new
 /// authority set commitment.
-pub fn verify_rotation(rotate_inputs: RotateInputs) -> B256 {
+pub fn verify_rotate(rotate_inputs: RotateInputs) -> B256 {
     
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash =

@@ -9,3 +9,6 @@ pub const WEIGHT_LENGTH: usize = 8;
 
 // Blake2b hash size.
 pub const HASH_SIZE: usize = 32;
+
+// ABI-encoded length of the header range outputs.
+pub const HEADER_OUTPUTS_LENGTH: usize = 32 * 7;

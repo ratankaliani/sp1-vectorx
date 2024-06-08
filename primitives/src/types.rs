@@ -27,6 +27,16 @@ pub enum ProofType {
     RotateProof,
 }
 
+impl ProofType {
+    pub fn from_uint(value: u8) -> Option<ProofType> {
+        match value {
+            0 => Some(ProofType::HeaderRangeProof),
+            1 => Some(ProofType::RotateProof),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct RotateInputs {
     pub current_authority_set_id: u64,

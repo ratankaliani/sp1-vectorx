@@ -2,6 +2,7 @@ use alloy_primitives::B256;
 use blake2::digest::{Update, VariableOutput};
 use blake2::Blake2bVar;
 
+use crate::consts::HEADER_OUTPUTS_LENGTH;
 use crate::merkle::get_merkle_root_commitments;
 use crate::types::{
     CircuitJustification, DecodedHeaderData, HeaderRangeInputs, HeaderRangeOutputs,
@@ -14,7 +15,7 @@ use alloy_sol_types::SolType;
 pub fn verify_header_range(
     header_range_inputs: HeaderRangeInputs,
     target_justification: CircuitJustification,
-) -> [u8; 32 * 7] {
+) -> [u8; HEADER_OUTPUTS_LENGTH] {
     let encoded_headers = header_range_inputs.encoded_headers;
 
     // 1. Decode the headers using: https://github.com/succinctlabs/vectorx/blob/fb83641259aef1f5df33efa73c23d90973d64e24/circuits/builder/decoder.rs#L104-L157
