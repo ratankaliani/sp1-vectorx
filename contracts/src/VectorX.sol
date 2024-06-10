@@ -14,6 +14,10 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @notice Indicator of if the contract is frozen.
     bool public frozen;
 
+    /// @notice The address of the gateway contract.
+    /// @dev DEPRECATED: Do not use.
+    address public gateway_deprecated;
+
     /// @notice The latest block that has been committed.
     uint32 public latestBlock;
 
