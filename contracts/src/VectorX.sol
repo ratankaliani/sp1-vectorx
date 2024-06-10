@@ -203,6 +203,10 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert OldAuthoritySetId();
         }
 
+        if (trustedBlock != latestBlock) {
+            revert BlockHeightMismatch();
+        }
+
         if (_authoritySetId > latestAuthoritySetId) {
             latestAuthoritySetId = _authoritySetId;
         }

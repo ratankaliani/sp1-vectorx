@@ -56,4 +56,7 @@ interface IVectorX {
 
     /// @notice The proof type is not HeaderRangeProof or RotateProof.
     error InvalidProofType();
+
+    /// @notice The trusted block inside the proof does not match the trusted block of the contract.
+    error BlockHeightMismatch();
 }
