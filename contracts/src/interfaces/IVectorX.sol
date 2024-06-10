@@ -49,8 +49,14 @@ interface IVectorX {
     /// @notice Trusted header not found.
     error TrustedHeaderNotFound();
 
+    /// @notice Stored trusted header does not match proof trusted header.
+    error TrustedHeaderMismatch();
+
     /// @notice Authority set not found.
     error AuthoritySetNotFound();
+
+    /// @notice Stored authority set does not match proof authority set.
+    error AuthoritySetMismatch();
 
     /// @notice The authority set id is older than the authority set id of the latest commitHeaderRange.
     error OldAuthoritySetId();

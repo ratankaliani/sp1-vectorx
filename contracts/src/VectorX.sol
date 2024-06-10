@@ -167,22 +167,29 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        (uint8 proofTypeInt, bytes headerRangeOutputs, ,) = abi.decode(publicValues, (uint8, bytes, bytes));
+        (uint8 proofTypeInt, bytes memory headerRangeOutputs, ) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
-        (uint32 trustedBlock, bytes32 trustedHeaderHash, uint64 _authoritySetId, bytes32 authoritySetHash, uint32 _targetBlock, bytes32 target_header_hash, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
-            abi.decode(headerRangeOutputs, (uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32));
+        (uint32 trustedBlock, bytes32 trustedHeader, uint64 _authoritySetId, bytes32 authoritySetHash, uint32 _targetBlock, bytes32 targetHeaderHash, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
+            abi.decode(headerRangeOutputs, (uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32, bytes32));
 
         if (proofType != ProofType.HeaderRangeProof) {
             revert InvalidProofType();
         }
 
-        bytes32 trustedHeader = blockHeightToHeaderHash[latestBlock];
+        bytes32 trustedHeaderStored = blockHeightToHeaderHash[latestBlock];
         if (trustedHeader == bytes32(0)) {
             revert TrustedHeaderNotFound();
         }
-        bytes32 authoritySetHash = authoritySetIdToHash[_authoritySetId];
+        if (trustedHeader != trustedHeaderStored) {
+            revert TrustedHeaderMismatch();
+        }
+
+        bytes32 authoritySetHashStored = authoritySetIdToHash[_authoritySetId];
         if (authoritySetHash == bytes32(0)) {
             revert AuthoritySetNotFound();
+        }
+        if (authoritySetHash != authoritySetHashStored) {
+            revert AuthoritySetMismatch();
         }
 
         if (_authoritySetId < latestAuthoritySetId) {
@@ -225,18 +232,21 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        (uint8 proofTypeInt, , bytes rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
+        (uint8 proofTypeInt, , bytes memory rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
-        (uint64 _currentAuthoritySetId, bytes32 newAuthoritySetHash) = abi.decode(rotateOutputs, (uint64, bytes32));
+        (uint64 _currentAuthoritySetId,bytes32 currentAuthoritySetHash, bytes32 newAuthoritySetHash) = abi.decode(rotateOutputs, (uint64,bytes32, bytes32));
 
         if (proofType != ProofType.RotateProof) {
             revert InvalidProofType();
         }
 
-        bytes32 currentAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId];
+        bytes32 currentAuthoritySetHashStored = authoritySetIdToHash[_currentAuthoritySetId];
         // Note: Occurs if requesting a new authority set id that is not the next authority set id.
         if (currentAuthoritySetHash == bytes32(0)) {
             revert AuthoritySetNotFound();
+        }
+        if (currentAuthoritySetHash != currentAuthoritySetHashStored) {
+            revert AuthoritySetMismatch();
         }
 
         bytes32 nextAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId + 1];
