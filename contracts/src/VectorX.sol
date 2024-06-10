@@ -20,12 +20,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @notice The latest authority set id used in commitHeaderRange.
     uint64 public latestAuthoritySetId;
 
-    /// @notice The function for requesting a header range.
-    bytes32 public headerRangeFunctionId;
-
-    /// @notice The function for requesting a rotate.
-    bytes32 public rotateFunctionId;
-
     /// @notice Maps block height to the header hash of the block.
     mapping(uint32 => bytes32) public blockHeightToHeaderHash;
 
@@ -53,14 +47,16 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         bytes32 header;
         uint64 authoritySetId;
         bytes32 authoritySetHash;
-        bytes32 headerRangeFunctionId;
-        bytes32 rotateFunctionId;
         uint32 headerRangeCommitmentTreeSize;
+        bytes32 vectorXProgramVkey;
+        address verifier;
     }
 
     bytes32 public vectorXProgramVkey;
 
     ISP1Verifier public verifier;
+
+    enum ProofType {HeaderRangeProof, RotateProof}
 
     function VERSION() external pure override returns (string memory) {
         return "1.0.0";
@@ -73,9 +69,9 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         authoritySetIdToHash[_params.authoritySetId] = _params.authoritySetHash;
         latestAuthoritySetId = _params.authoritySetId;
         latestBlock = _params.height;
+        vectorXProgramVkey = _params.vectorXProgramVkey;
+        verifier = ISP1Verifier(_params.verifier);
 
-        rotateFunctionId = _params.rotateFunctionId;
-        headerRangeFunctionId = _params.headerRangeFunctionId;
         headerRangeCommitmentTreeSize = _params.headerRangeCommitmentTreeSize;
 
         __TimelockedUpgradeable_init(_params.guardian, _params.guardian);
@@ -86,14 +82,10 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         frozen = _freeze;
     }
 
-    /// @notice Update the function IDs and the commitment tree size for the header range function id.
-    function updateFunctionIds(
-        bytes32 _headerRangeFunctionId,
-        bytes32 _rotateFunctionId,
+    /// @notice Update the commitment tree size for the header range function.
+    function updateCommitmentTreeSize(
         uint32 _headerRangeCommitmentTreeSize
     ) external onlyGuardian {
-        headerRangeFunctionId = _headerRangeFunctionId;
-        rotateFunctionId = _rotateFunctionId;
         headerRangeCommitmentTreeSize = _headerRangeCommitmentTreeSize;
     }
 
@@ -212,7 +204,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
     /// @notice Adds the authority set hash for the next authority set id.
     /// @param _currentAuthoritySetId The authority set id of the current authority set.
-    function rotate(uint64 _currentAuthoritySetId) external {
+    function rotate(uint64 _currentAuthoritySetId, bytes calldata proof, bytes calldata publicValues) external {
         if (frozen) {
             revert ContractFrozen();
         }
@@ -228,11 +220,15 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert NextAuthoritySetExists();
         }
 
-        bytes memory input = abi.encodePacked(_currentAuthoritySetId, currentAuthoritySetHash);
+        (uint8 ProofTypeInt, bytes _, bytes32 newAuthoritySetHash) = abi.decode(publicValues, (uint8, bytes, bytes32));
+        ProofType proofType = ProofType(ProofTypeInt);
 
-        // bytes memory output = ISuccinctGateway(gateway).verifiedCall(rotateFunctionId, input);
+        if (proofType != ProofType.RotateProof) {
+            revert InvalidProofType();
+        }
 
-        bytes32 newAuthoritySetHash = abi.decode(output, (bytes32));
+        // Verify the proof with the associated public values. This will revert if proof invalid.
+        verifier.verifyProof(vectorXProgramVkey, publicValues, proof);
 
         // Store the authority set hash for the next authority set id.
         authoritySetIdToHash[_currentAuthoritySetId + 1] = newAuthoritySetHash;

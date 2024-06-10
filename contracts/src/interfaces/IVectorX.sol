@@ -54,4 +54,7 @@ interface IVectorX {
 
     /// @notice The authority set id is older than the authority set id of the latest commitHeaderRange.
     error OldAuthoritySetId();
+
+    /// @notice The proof type is not HeaderRangeProof or RotateProof.
+    error InvalidProofType();
 }
