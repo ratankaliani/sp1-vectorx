@@ -67,7 +67,10 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     ISP1Verifier public verifier;
 
     /// @notice The type of proof that is being verified.
-    enum ProofType {HeaderRangeProof, RotateProof}
+    enum ProofType {
+        HeaderRangeProof,
+        RotateProof
+    }
 
     function VERSION() external pure override returns (string memory) {
         return "2.0.0";
@@ -94,12 +97,9 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     }
 
     /// @notice Update the commitment tree size for the header range function.
-    function updateCommitmentTreeSize(
-        uint32 _headerRangeCommitmentTreeSize
-    ) external onlyGuardian {
+    function updateCommitmentTreeSize(uint32 _headerRangeCommitmentTreeSize) external onlyGuardian {
         headerRangeCommitmentTreeSize = _headerRangeCommitmentTreeSize;
     }
-
 
     /// @notice Update the genesis state of the light client.
     function updateGenesisState(uint32 _height, bytes32 _header, uint64 _authoritySetId, bytes32 _authoritySetHash)
@@ -156,7 +156,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         latestAuthoritySetId = _endAuthoritySetId;
     }
 
-
     /// @notice Add target header hash, and data + state commitments for (latestBlock, targetBlock].
     /// @param proof The proof bytes
     /// @param publicValues The public commitments from the proof
@@ -167,10 +166,18 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        (uint8 proofTypeInt, bytes memory headerRangeOutputs, ) = abi.decode(publicValues, (uint8, bytes, bytes));
+        (uint8 proofTypeInt, bytes memory headerRangeOutputs,) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
-        (uint32 trustedBlock, bytes32 trustedHeader, uint64 _authoritySetId, bytes32 authoritySetHash, uint32 _targetBlock, bytes32 targetHeaderHash, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
-            abi.decode(headerRangeOutputs, (uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32, bytes32));
+        (
+            uint32 trustedBlock,
+            bytes32 trustedHeader,
+            uint64 _authoritySetId,
+            bytes32 authoritySetHash,
+            uint32 _targetBlock,
+            bytes32 targetHeaderHash,
+            bytes32 stateRootCommitment,
+            bytes32 dataRootCommitment
+        ) = abi.decode(headerRangeOutputs, (uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32, bytes32));
 
         if (proofType != ProofType.HeaderRangeProof) {
             revert InvalidProofType();
@@ -223,7 +230,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         latestBlock = _targetBlock;
     }
 
-
     /// @notice Adds the authority set hash for the next authority set id.
     /// @param proof The proof bytes
     /// @param publicValues The public commitments from the proof
@@ -232,9 +238,10 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        (uint8 proofTypeInt, , bytes memory rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
+        (uint8 proofTypeInt,, bytes memory rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
-        (uint64 _currentAuthoritySetId,bytes32 currentAuthoritySetHash, bytes32 newAuthoritySetHash) = abi.decode(rotateOutputs, (uint64,bytes32, bytes32));
+        (uint64 _currentAuthoritySetId, bytes32 currentAuthoritySetHash, bytes32 newAuthoritySetHash) =
+            abi.decode(rotateOutputs, (uint64, bytes32, bytes32));
 
         if (proofType != ProofType.RotateProof) {
             revert InvalidProofType();

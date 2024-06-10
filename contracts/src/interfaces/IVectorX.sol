@@ -9,20 +9,13 @@ interface IVectorX {
     /// @param authoritySetHash The authority set hash of trusted block + 1.
     /// @param targetBlock The block height of the target block.
     event HeaderRangeRequested(
-        uint32 trustedBlock,
-        bytes32 trustedHeader,
-        uint64 authoritySetId,
-        bytes32 authoritySetHash,
-        uint32 targetBlock
+        uint32 trustedBlock, bytes32 trustedHeader, uint64 authoritySetId, bytes32 authoritySetHash, uint32 targetBlock
     );
 
     /// @notice Emits event with the inputs of a rotate request.
     /// @param currentAuthoritySetId The authority set id of the current authority set.
     /// @param currentAuthoritySetHash The authority set hash of the current authority set.
-    event RotateRequested(
-        uint64 currentAuthoritySetId,
-        bytes32 currentAuthoritySetHash
-    );
+    event RotateRequested(uint64 currentAuthoritySetId, bytes32 currentAuthoritySetHash);
 
     /// @notice Emitted when the light client's head is updated.
     event HeadUpdate(uint32 blockNumber, bytes32 headerHash);
