@@ -150,13 +150,22 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
 
     /// @notice Add target header hash, and data + state commitments for (latestBlock, targetBlock].
-    /// @param _authoritySetId The authority set id of the header range (latestBlock, targetBlock].
-    /// @param _targetBlock The block height of the target block.
+    /// @param proof The proof bytes
+    /// @param publicValues The public commitments from the proof
     /// @dev The trusted block and requested block must have the same authority set id. If the target
     /// block is greater than the max batch size of the circuit, the proof will fail to generate.
-    function commitHeaderRange(uint64 _authoritySetId, uint32 _targetBlock) external {
+    function commitHeaderRange(bytes calldata proof, bytes calldata publicValues) external {
         if (frozen) {
             revert ContractFrozen();
+        }
+
+        (uint8 proofTypeInt, bytes headerRangeOutputs, bytes _) = abi.decode(publicValues, (uint8, bytes, bytes));
+        ProofType proofType = ProofType(proofTypeInt);
+        (uint32 trustedBlock, bytes32 trustedHeaderHash, uint64 _authoritySetId, bytes32 authoritySetHash, uint32 _targetBlock, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
+            abi.decode(headerRangeOutputs, (uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32));
+
+        if (proofType != ProofType.HeaderRangeProof) {
+            revert InvalidProofType();
         }
 
         bytes32 trustedHeader = blockHeightToHeaderHash[latestBlock];
@@ -178,15 +187,10 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
         require(_targetBlock > latestBlock);
 
-        bytes memory input =
-            abi.encodePacked(latestBlock, trustedHeader, _authoritySetId, authoritySetHash, _targetBlock);
+        // Verify the proof with the associated public values. This will revert if proof invalid.
+        verifier.verifyProof(vectorXProgramVkey, publicValues, proof);
 
-        // bytes memory output = ISuccinctGateway(gateway).verifiedCall(headerRangeFunctionId, input);
-
-        (bytes32 targetHeaderHash, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
-            abi.decode(output, (bytes32, bytes32, bytes32));
-
-        blockHeightToHeaderHash[_targetBlock] = targetHeaderHash;
+        blockHeightToHeaderHash[_targetBlock] = authoritySetHash;
 
         // Store the data and state commitments for the range (latestBlock, targetBlock].
         bytes32 key = keccak256(abi.encode(latestBlock, _targetBlock));
@@ -194,7 +198,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         stateRootCommitments[key] = stateRootCommitment;
         rangeStartBlocks[key] = latestBlock;
 
-        emit HeadUpdate(_targetBlock, targetHeaderHash);
+        emit HeadUpdate(_targetBlock, authoritySetHash);
 
         emit HeaderRangeCommitmentStored(
             latestBlock, _targetBlock, dataRootCommitment, stateRootCommitment, headerRangeCommitmentTreeSize
