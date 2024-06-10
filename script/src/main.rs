@@ -16,7 +16,7 @@ async fn main() -> anyhow::Result<()> {
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type = ProofType::HeaderRangeProof;
+    let proof_type = ProofType::RotateProof;
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
     println!("Successfully generated and verified proof for the program!");
 
     // Read outputs.
-    let mut output_bytes = [0u8; 384];
+    let mut output_bytes = [0u8; 480];
     proof.public_values.read_slice(&mut output_bytes);
     let outputs = ProofOutput::abi_decode(&output_bytes, true)?;
     
@@ -65,7 +65,7 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn log_proof_outputs(outputs: (u8, alloy_primitives::Bytes, alloy_primitives::FixedBytes<32>)) {
+fn log_proof_outputs(outputs: (u8, alloy_primitives::Bytes, alloy_primitives::Bytes)) {
     let proof_type = ProofType::from_uint(outputs.0).unwrap();
     match proof_type {
         ProofType::HeaderRangeProof => {

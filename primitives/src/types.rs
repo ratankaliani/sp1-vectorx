@@ -17,7 +17,7 @@ pub type HeaderRangeOutputs = sol! {
 /// uint64 current_authority_set_id;
 /// bytes32 new_authority_set_hash;
 pub type RotateOutputs = sol! {
-    type(uint64, bytes32)
+    tuple(uint64, bytes32)
 };
 
 /// uint8 ProofType (0 = HeaderRangeProof, 1 = RotateProof)
