@@ -159,7 +159,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        (uint8 proofTypeInt, bytes headerRangeOutputs, bytes _) = abi.decode(publicValues, (uint8, bytes, bytes));
+        (uint8 proofTypeInt, bytes headerRangeOutputs, ,) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
         (uint32 trustedBlock, bytes32 trustedHeaderHash, uint64 _authoritySetId, bytes32 authoritySetHash, uint32 _targetBlock, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
             abi.decode(headerRangeOutputs, (uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32));
@@ -217,7 +217,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        (uint8 proofTypeInt, bytes _, bytes rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
+        (uint8 proofTypeInt, , bytes rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
         (uint64 _currentAuthoritySetId, bytes32 newAuthoritySetHash) = abi.decode(rotateOutputs, (uint64, bytes32));
 
