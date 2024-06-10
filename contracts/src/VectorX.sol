@@ -105,12 +105,10 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     }
 
     /// @notice Update the genesis state of the light client.
-    function updateGenesisState(
-        uint32 _height,
-        bytes32 _header,
-        uint64 _authoritySetId,
-        bytes32 _authoritySetHash
-    ) external onlyGuardian {
+    function updateGenesisState(uint32 _height, bytes32 _header, uint64 _authoritySetId, bytes32 _authoritySetHash)
+        external
+        onlyGuardian
+    {
         blockHeightToHeaderHash[_height] = _header;
         latestBlock = _height;
 
@@ -129,11 +127,9 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         bytes32 _endAuthoritySetHash
     ) external onlyGuardian {
         assert(
-            _startBlocks.length > 0 &&
-                _startBlocks.length == _endBlocks.length &&
-                _endBlocks.length == _headerHashes.length &&
-                _headerHashes.length == _dataRootCommitments.length &&
-                _dataRootCommitments.length == _stateRootCommitments.length
+            _startBlocks.length > 0 && _startBlocks.length == _endBlocks.length
+                && _endBlocks.length == _headerHashes.length && _headerHashes.length == _dataRootCommitments.length
+                && _dataRootCommitments.length == _stateRootCommitments.length
         );
         require(_startBlocks[0] == latestBlock);
         for (uint256 i = 0; i < _startBlocks.length; i++) {
@@ -168,10 +164,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @param _requestedBlock The block height of the requested block.
     /// @dev The trusted block and requested block must have the same authority id. If the target
     /// block is greater than the max batch size of the circuit, the proof will fail to generate.
-    function requestHeaderRange(
-        uint64 _authoritySetId,
-        uint32 _requestedBlock
-    ) external payable {
+    function requestHeaderRange(uint64 _authoritySetId, uint32 _requestedBlock) external payable {
         bytes32 trustedHeader = blockHeightToHeaderHash[latestBlock];
         if (trustedHeader == bytes32(0)) {
             revert AuthoritySetNotFound();
@@ -185,35 +178,16 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
         require(_requestedBlock > latestBlock);
 
-        bytes memory input = abi.encodePacked(
-            latestBlock,
-            trustedHeader,
-            _authoritySetId,
-            authoritySetHash,
-            _requestedBlock
-        );
+        bytes memory input =
+            abi.encodePacked(latestBlock, trustedHeader, _authoritySetId, authoritySetHash, _requestedBlock);
 
-        bytes memory data = abi.encodeWithSelector(
-            this.commitHeaderRange.selector,
-            _authoritySetId,
-            _requestedBlock
-        );
+        bytes memory data = abi.encodeWithSelector(this.commitHeaderRange.selector, _authoritySetId, _requestedBlock);
 
         ISuccinctGateway(gateway).requestCall{value: msg.value}(
-            headerRangeFunctionId,
-            input,
-            address(this),
-            data,
-            500000
+            headerRangeFunctionId, input, address(this), data, 500000
         );
 
-        emit HeaderRangeRequested(
-            latestBlock,
-            trustedHeader,
-            _authoritySetId,
-            authoritySetHash,
-            _requestedBlock
-        );
+        emit HeaderRangeRequested(latestBlock, trustedHeader, _authoritySetId, authoritySetHash, _requestedBlock);
     }
 
     /// @notice Add target header hash, and data + state commitments for (latestBlock, targetBlock].
@@ -221,10 +195,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @param _targetBlock The block height of the target block.
     /// @dev The trusted block and requested block must have the same authority set id. If the target
     /// block is greater than the max batch size of the circuit, the proof will fail to generate.
-    function commitHeaderRange(
-        uint64 _authoritySetId,
-        uint32 _targetBlock
-    ) external {
+    function commitHeaderRange(uint64 _authoritySetId, uint32 _targetBlock) external {
         if (frozen) {
             revert ContractFrozen();
         }
@@ -248,24 +219,13 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
         require(_targetBlock > latestBlock);
 
-        bytes memory input = abi.encodePacked(
-            latestBlock,
-            trustedHeader,
-            _authoritySetId,
-            authoritySetHash,
-            _targetBlock
-        );
+        bytes memory input =
+            abi.encodePacked(latestBlock, trustedHeader, _authoritySetId, authoritySetHash, _targetBlock);
 
-        bytes memory output = ISuccinctGateway(gateway).verifiedCall(
-            headerRangeFunctionId,
-            input
-        );
+        bytes memory output = ISuccinctGateway(gateway).verifiedCall(headerRangeFunctionId, input);
 
-        (
-            bytes32 targetHeaderHash,
-            bytes32 stateRootCommitment,
-            bytes32 dataRootCommitment
-        ) = abi.decode(output, (bytes32, bytes32, bytes32));
+        (bytes32 targetHeaderHash, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
+            abi.decode(output, (bytes32, bytes32, bytes32));
 
         blockHeightToHeaderHash[_targetBlock] = targetHeaderHash;
 
@@ -278,11 +238,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         emit HeadUpdate(_targetBlock, targetHeaderHash);
 
         emit HeaderRangeCommitmentStored(
-            latestBlock,
-            _targetBlock,
-            dataRootCommitment,
-            stateRootCommitment,
-            headerRangeCommitmentTreeSize
+            latestBlock, _targetBlock, dataRootCommitment, stateRootCommitment, headerRangeCommitmentTreeSize
         );
 
         // Update latest block.
@@ -292,37 +248,21 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @notice Requests a rotate to the next authority set.
     /// @param _currentAuthoritySetId The authority set id of the current authority set.
     function requestRotate(uint64 _currentAuthoritySetId) external payable {
-        bytes32 currentAuthoritySetHash = authoritySetIdToHash[
-            _currentAuthoritySetId
-        ];
+        bytes32 currentAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId];
         if (currentAuthoritySetHash == bytes32(0)) {
             revert AuthoritySetNotFound();
         }
 
-        bytes32 nextAuthoritySetHash = authoritySetIdToHash[
-            _currentAuthoritySetId + 1
-        ];
+        bytes32 nextAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId + 1];
         if (nextAuthoritySetHash != bytes32(0)) {
             revert NextAuthoritySetExists();
         }
 
-        bytes memory input = abi.encodePacked(
-            _currentAuthoritySetId,
-            currentAuthoritySetHash
-        );
+        bytes memory input = abi.encodePacked(_currentAuthoritySetId, currentAuthoritySetHash);
 
-        bytes memory data = abi.encodeWithSelector(
-            this.rotate.selector,
-            _currentAuthoritySetId
-        );
+        bytes memory data = abi.encodeWithSelector(this.rotate.selector, _currentAuthoritySetId);
 
-        ISuccinctGateway(gateway).requestCall{value: msg.value}(
-            rotateFunctionId,
-            input,
-            address(this),
-            data,
-            500000
-        );
+        ISuccinctGateway(gateway).requestCall{value: msg.value}(rotateFunctionId, input, address(this), data, 500000);
 
         emit RotateRequested(_currentAuthoritySetId, currentAuthoritySetHash);
     }
@@ -334,39 +274,26 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        bytes32 currentAuthoritySetHash = authoritySetIdToHash[
-            _currentAuthoritySetId
-        ];
+        bytes32 currentAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId];
         // Note: Occurs if requesting a new authority set id that is not the next authority set id.
         if (currentAuthoritySetHash == bytes32(0)) {
             revert AuthoritySetNotFound();
         }
 
-        bytes32 nextAuthoritySetHash = authoritySetIdToHash[
-            _currentAuthoritySetId + 1
-        ];
+        bytes32 nextAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId + 1];
         if (nextAuthoritySetHash != bytes32(0)) {
             revert NextAuthoritySetExists();
         }
 
-        bytes memory input = abi.encodePacked(
-            _currentAuthoritySetId,
-            currentAuthoritySetHash
-        );
+        bytes memory input = abi.encodePacked(_currentAuthoritySetId, currentAuthoritySetHash);
 
-        bytes memory output = ISuccinctGateway(gateway).verifiedCall(
-            rotateFunctionId,
-            input
-        );
+        bytes memory output = ISuccinctGateway(gateway).verifiedCall(rotateFunctionId, input);
 
         bytes32 newAuthoritySetHash = abi.decode(output, (bytes32));
 
         // Store the authority set hash for the next authority set id.
         authoritySetIdToHash[_currentAuthoritySetId + 1] = newAuthoritySetHash;
 
-        emit AuthoritySetStored(
-            _currentAuthoritySetId + 1,
-            newAuthoritySetHash
-        );
+        emit AuthoritySetStored(_currentAuthoritySetId + 1, newAuthoritySetHash);
     }
 }
