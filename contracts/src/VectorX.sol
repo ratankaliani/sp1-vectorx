@@ -52,10 +52,13 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         address verifier;
     }
 
+    /// @notice The verification key for the VectorX program.
     bytes32 public vectorXProgramVkey;
 
+    /// @notice The deployed SP1 verifier contract.
     ISP1Verifier public verifier;
 
+    /// @notice The type of proof that is being verified.
     enum ProofType {HeaderRangeProof, RotateProof}
 
     function VERSION() external pure override returns (string memory) {
