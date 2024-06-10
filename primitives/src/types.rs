@@ -14,11 +14,17 @@ pub type HeaderRangeOutputs = sol! {
     tuple(uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32)
 };
 
+/// uint64 current_authority_set_id;
+/// bytes32 new_authority_set_hash;
+pub type RotateOutputs = sol! {
+    type(uint64, bytes32)
+};
+
 /// uint8 ProofType (0 = HeaderRangeProof, 1 = RotateProof)
 /// bytes HeaderRangeOutputs
-/// bytes32 new_auth_set_hash
+/// bytes RotateOutputs
 pub type ProofOutput = sol! {
-    tuple(uint8, bytes, bytes32)
+    tuple(uint8, bytes, bytes)
 };
 
 #[derive(Debug, Deserialize, Serialize)]

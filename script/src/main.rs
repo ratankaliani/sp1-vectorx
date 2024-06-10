@@ -1,7 +1,7 @@
 //! A simple script to generate and verify the proof of a given program.
 
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType};
+use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 use alloy_sol_types::SolType;
@@ -21,7 +21,6 @@ async fn main() -> anyhow::Result<()> {
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ELF);
-    println!("Vkey: {:?}, Vkey length:", vk);
     let mut stdin: SP1Stdin = SP1Stdin::new();
     let mut proof;
 
@@ -75,9 +74,9 @@ fn log_proof_outputs(outputs: (u8, alloy_primitives::Bytes, alloy_primitives::Fi
             println!("Header Range Outputs: {:?}", header_range_outputs);
         }
         ProofType::RotateProof => {
-            let new_authority_set_hash = outputs.2;
+            let rotate_outputs = RotateOutputs::abi_decode(&outputs.2, true).unwrap();
             println!("Proof Type: Rotate Proof");
-            println!("New authority set hash: {:?}", new_authority_set_hash);
+            println!("Rotate Outputs: {:?}", rotate_outputs)
         }
     }
 }

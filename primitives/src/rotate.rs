@@ -1,11 +1,10 @@
 use alloy_primitives::B256;
 
-use crate::{compute_authority_set_commitment, decode_scale_compact_int, types::RotateInputs, verify_encoded_validators, verify_simple_justification};
+use crate::{compute_authority_set_commitment, consts::ROTATE_OUTPUTS_LENGTH, decode_scale_compact_int, types::RotateInputs, types::RotateOutputs,  verify_encoded_validators, verify_simple_justification};
 
 /// Verify the justification from the current authority set on the epoch end header and return the new
 /// authority set commitment.
-pub fn verify_rotate(rotate_inputs: RotateInputs) -> B256 {
-    
+pub fn verify_rotate(rotate_inputs: RotateInputs) -> [u8; ROTATE_OUTPUTS_LENGTH] {
     // Compute new authority set hash & convert it from binary to bytes32 for the blockchain
     let new_authority_set_hash =
         compute_authority_set_commitment(&rotate_inputs.header_rotate_data.pubkeys);
@@ -25,7 +24,13 @@ pub fn verify_rotate(rotate_inputs: RotateInputs) -> B256 {
         rotate_inputs.header_rotate_data.pubkeys.clone(),
     );
 
-    new_authority_set_hash
+    // Return the ABI encoded RotateOutputs.
+    RotateOutputs::abi_encode(&(
+        rotate_inputs.current_authority_set_id,
+        new_authority_set_hash,
+    ))
+    .try_into()
+    .unwrap()
 }
 
 /// Verify the encoded epoch end header is formatted correctly, and that the provided new pubkeys match the encoded ones.

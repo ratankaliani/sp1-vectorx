@@ -206,10 +206,19 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
 
     /// @notice Adds the authority set hash for the next authority set id.
-    /// @param _currentAuthoritySetId The authority set id of the current authority set.
-    function rotate(uint64 _currentAuthoritySetId, bytes calldata proof, bytes calldata publicValues) external {
+    /// @param proof The proof bytes
+    /// @param publicValues The public commitments from the proof
+    function rotate(bytes calldata proof, bytes calldata publicValues) external {
         if (frozen) {
             revert ContractFrozen();
+        }
+
+        (uint8 proofTypeInt, bytes _, bytes rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
+        ProofType proofType = ProofType(proofTypeInt);
+        (uint64 _currentAuthoritySetId, bytes32 newAuthoritySetHash) = abi.decode(rotateOutputs, (uint64, bytes32));
+
+        if (proofType != ProofType.RotateProof) {
+            revert InvalidProofType();
         }
 
         bytes32 currentAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId];
@@ -221,13 +230,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         bytes32 nextAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId + 1];
         if (nextAuthoritySetHash != bytes32(0)) {
             revert NextAuthoritySetExists();
-        }
-
-        (uint8 ProofTypeInt, bytes _, bytes32 newAuthoritySetHash) = abi.decode(publicValues, (uint8, bytes, bytes32));
-        ProofType proofType = ProofType(ProofTypeInt);
-
-        if (proofType != ProofType.RotateProof) {
-            revert InvalidProofType();
         }
 
         // Verify the proof with the associated public values. This will revert if proof invalid.
