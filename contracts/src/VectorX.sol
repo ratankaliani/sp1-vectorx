@@ -169,7 +169,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
         (uint8 proofTypeInt, bytes headerRangeOutputs, ,) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
-        (uint32 trustedBlock, bytes32 trustedHeaderHash, uint64 _authoritySetId, bytes32 authoritySetHash, uint32 _targetBlock, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
+        (uint32 trustedBlock, bytes32 trustedHeaderHash, uint64 _authoritySetId, bytes32 authoritySetHash, uint32 _targetBlock, bytes32 target_header_hash, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
             abi.decode(headerRangeOutputs, (uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32));
 
         if (proofType != ProofType.HeaderRangeProof) {
@@ -198,7 +198,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         // Verify the proof with the associated public values. This will revert if proof invalid.
         verifier.verifyProof(vectorXProgramVkey, publicValues, proof);
 
-        blockHeightToHeaderHash[_targetBlock] = authoritySetHash;
+        blockHeightToHeaderHash[_targetBlock] = targetHeaderHash;
 
         // Store the data and state commitments for the range (latestBlock, targetBlock].
         bytes32 key = keccak256(abi.encode(latestBlock, _targetBlock));
@@ -206,7 +206,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         stateRootCommitments[key] = stateRootCommitment;
         rangeStartBlocks[key] = latestBlock;
 
-        emit HeadUpdate(_targetBlock, authoritySetHash);
+        emit HeadUpdate(_targetBlock, targetHeaderHash);
 
         emit HeaderRangeCommitmentStored(
             latestBlock, _targetBlock, dataRootCommitment, stateRootCommitment, headerRangeCommitmentTreeSize
