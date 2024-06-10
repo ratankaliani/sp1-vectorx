@@ -11,7 +11,10 @@ pub const WEIGHT_LENGTH: usize = 8;
 pub const HASH_SIZE: usize = 32;
 
 // ABI-encoded length of the header range outputs.
-pub const HEADER_OUTPUTS_LENGTH: usize = 32 * 7;
+pub const HEADER_OUTPUTS_LENGTH: usize = 32 * 8;
 
 // ABI-encoded length of the rotate outputs.
-pub const ROTATE_OUTPUTS_LENGTH: usize = 32 * 2;
+pub const ROTATE_OUTPUTS_LENGTH: usize = 32 * 3;
+
+// ABI-encoded length of final proof output.
+pub const PROOF_OUTPUT_LENGTH: usize = 544;

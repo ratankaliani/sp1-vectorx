@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
     println!("Successfully generated and verified proof for the program!");
 
     // Read outputs.
-    let mut output_bytes = [0u8; 480];
+    let mut output_bytes = [0u8; 544];
     proof.public_values.read_slice(&mut output_bytes);
     let outputs = ProofOutput::abi_decode(&output_bytes, true)?;
     
