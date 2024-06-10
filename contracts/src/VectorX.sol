@@ -239,8 +239,9 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         emit AuthoritySetStored(_currentAuthoritySetId + 1, newAuthoritySetHash);
     }
 
+    /// @notice Update the verification key hash if the SP1 program was updated.
+    /// @param _vkey The verification key hash of the new SP1 program.
     function updateVkeyHash(bytes32 _vkey) external onlyGuardian {
         vectorXProgramVkey = _vkey;
     }
-
 }
