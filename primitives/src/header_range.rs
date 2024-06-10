@@ -88,6 +88,7 @@ pub fn verify_header_range(
         header_range_inputs.authority_set_id,
         header_range_inputs.authority_set_hash,
         header_range_inputs.target_block,
+        header_range_inputs.target_header_hash,
         state_root_commitment,
         data_root_commitment,
     ))

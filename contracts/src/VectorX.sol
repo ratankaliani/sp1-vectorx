@@ -20,6 +20,14 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @notice The latest authority set id used in commitHeaderRange.
     uint64 public latestAuthoritySetId;
 
+    /// @notice The function for requesting a header range.
+    /// @dev DEPRECATED: Do not use.
+    bytes32 public headerRangeFunctionId_deprecated;
+
+    /// @notice The function for requesting a rotate.
+    /// @dev DEPRECATED: Do not use.
+    bytes32 public rotateFunctionId_deprecated;
+
     /// @notice Maps block height to the header hash of the block.
     mapping(uint32 => bytes32) public blockHeightToHeaderHash;
 
@@ -62,7 +70,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     enum ProofType {HeaderRangeProof, RotateProof}
 
     function VERSION() external pure override returns (string memory) {
-        return "1.0.0";
+        return "2.0.0";
     }
 
     /// @dev Initializes the contract.

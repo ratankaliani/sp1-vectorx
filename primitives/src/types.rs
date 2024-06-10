@@ -8,16 +8,18 @@ use serde::{Deserialize, Serialize};
 /// uint64 authority_set_id;
 /// bytes32 authority_set_hash;
 /// uint32 target_block;
+/// bytes32 target_header_hash
 /// bytes32 state_root_commitment;
 /// bytes32 data_root_commitment;
 pub type HeaderRangeOutputs = sol! {
-    tuple(uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32)
+    tuple(uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32, bytes32)
 };
 
 /// uint64 current_authority_set_id;
+/// bytes32 current_authority_set_hash;
 /// bytes32 new_authority_set_hash;
 pub type RotateOutputs = sol! {
-    tuple(uint64, bytes32)
+    tuple(uint64, bytes32, bytes32)
 };
 
 /// uint8 ProofType (0 = HeaderRangeProof, 1 = RotateProof)

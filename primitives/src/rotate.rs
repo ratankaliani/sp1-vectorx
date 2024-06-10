@@ -27,6 +27,7 @@ pub fn verify_rotate(rotate_inputs: RotateInputs) -> [u8; ROTATE_OUTPUTS_LENGTH]
     // Return the ABI encoded RotateOutputs.
     RotateOutputs::abi_encode(&(
         rotate_inputs.current_authority_set_id,
+        rotate_inputs.current_authority_set_hash,
         new_authority_set_hash,
     ))
     .try_into()
