@@ -14,9 +14,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @notice Indicator of if the contract is frozen.
     bool public frozen;
 
-    /// @notice The address of the gateway contract.
-    address public gateway;
-
     /// @notice The latest block that has been committed.
     uint32 public latestBlock;
 
@@ -52,7 +49,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
     struct InitParameters {
         address guardian;
-        address gateway;
         uint32 height;
         bytes32 header;
         uint64 authoritySetId;
@@ -73,8 +69,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @dev Initializes the contract.
     /// @param _params The initialization parameters for the contract.
     function initialize(InitParameters calldata _params) external initializer {
-        gateway = _params.gateway;
-
         blockHeightToHeaderHash[_params.height] = _params.header;
         authoritySetIdToHash[_params.authoritySetId] = _params.authoritySetHash;
         latestAuthoritySetId = _params.authoritySetId;
@@ -103,10 +97,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         headerRangeCommitmentTreeSize = _headerRangeCommitmentTreeSize;
     }
 
-    /// @notice Update the gateway address.
-    function updateGateway(address _gateway) external onlyGuardian {
-        gateway = _gateway;
-    }
 
     /// @notice Update the genesis state of the light client.
     function updateGenesisState(uint32 _height, bytes32 _header, uint64 _authoritySetId, bytes32 _authoritySetHash)
@@ -163,36 +153,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         latestAuthoritySetId = _endAuthoritySetId;
     }
 
-    /// @notice Request a header update and data commitment from range (latestBlock, requestedBlock].
-    /// @param _authoritySetId The authority set id of the header range (latestBlock, requestedBlock].
-    /// @param _requestedBlock The block height of the requested block.
-    /// @dev The trusted block and requested block must have the same authority id. If the target
-    /// block is greater than the max batch size of the circuit, the proof will fail to generate.
-    function requestHeaderRange(uint64 _authoritySetId, uint32 _requestedBlock) external payable {
-        bytes32 trustedHeader = blockHeightToHeaderHash[latestBlock];
-        if (trustedHeader == bytes32(0)) {
-            revert AuthoritySetNotFound();
-        }
-        // Note: In the case that the trusted block is an epoch end block, the authority set id will
-        // be the authority set id of the next epoch.
-        bytes32 authoritySetHash = authoritySetIdToHash[_authoritySetId];
-        if (authoritySetHash == bytes32(0)) {
-            revert AuthoritySetNotFound();
-        }
-
-        require(_requestedBlock > latestBlock);
-
-        bytes memory input =
-            abi.encodePacked(latestBlock, trustedHeader, _authoritySetId, authoritySetHash, _requestedBlock);
-
-        bytes memory data = abi.encodeWithSelector(this.commitHeaderRange.selector, _authoritySetId, _requestedBlock);
-
-        ISuccinctGateway(gateway).requestCall{value: msg.value}(
-            headerRangeFunctionId, input, address(this), data, 500000
-        );
-
-        emit HeaderRangeRequested(latestBlock, trustedHeader, _authoritySetId, authoritySetHash, _requestedBlock);
-    }
 
     /// @notice Add target header hash, and data + state commitments for (latestBlock, targetBlock].
     /// @param _authoritySetId The authority set id of the header range (latestBlock, targetBlock].
@@ -226,7 +186,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         bytes memory input =
             abi.encodePacked(latestBlock, trustedHeader, _authoritySetId, authoritySetHash, _targetBlock);
 
-        bytes memory output = ISuccinctGateway(gateway).verifiedCall(headerRangeFunctionId, input);
+        // bytes memory output = ISuccinctGateway(gateway).verifiedCall(headerRangeFunctionId, input);
 
         (bytes32 targetHeaderHash, bytes32 stateRootCommitment, bytes32 dataRootCommitment) =
             abi.decode(output, (bytes32, bytes32, bytes32));
@@ -249,27 +209,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         latestBlock = _targetBlock;
     }
 
-    /// @notice Requests a rotate to the next authority set.
-    /// @param _currentAuthoritySetId The authority set id of the current authority set.
-    function requestRotate(uint64 _currentAuthoritySetId) external payable {
-        bytes32 currentAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId];
-        if (currentAuthoritySetHash == bytes32(0)) {
-            revert AuthoritySetNotFound();
-        }
-
-        bytes32 nextAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId + 1];
-        if (nextAuthoritySetHash != bytes32(0)) {
-            revert NextAuthoritySetExists();
-        }
-
-        bytes memory input = abi.encodePacked(_currentAuthoritySetId, currentAuthoritySetHash);
-
-        bytes memory data = abi.encodeWithSelector(this.rotate.selector, _currentAuthoritySetId);
-
-        ISuccinctGateway(gateway).requestCall{value: msg.value}(rotateFunctionId, input, address(this), data, 500000);
-
-        emit RotateRequested(_currentAuthoritySetId, currentAuthoritySetHash);
-    }
 
     /// @notice Adds the authority set hash for the next authority set id.
     /// @param _currentAuthoritySetId The authority set id of the current authority set.
@@ -291,7 +230,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
         bytes memory input = abi.encodePacked(_currentAuthoritySetId, currentAuthoritySetHash);
 
-        bytes memory output = ISuccinctGateway(gateway).verifiedCall(rotateFunctionId, input);
+        // bytes memory output = ISuccinctGateway(gateway).verifiedCall(rotateFunctionId, input);
 
         bytes32 newAuthoritySetHash = abi.decode(output, (bytes32));
 
@@ -300,4 +239,9 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
         emit AuthoritySetStored(_currentAuthoritySetId + 1, newAuthoritySetHash);
     }
+
+    function updateVkeyHash(bytes32 _vkey) external onlyGuardian {
+        vectorXProgramVkey = _vkey;
+    }
+
 }

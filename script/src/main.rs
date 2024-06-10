@@ -21,6 +21,7 @@ async fn main() -> anyhow::Result<()> {
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
     let (pk, vk) = client.setup(ELF);
+    println!("Vkey: {:?}, Vkey length:", vk);
     let mut stdin: SP1Stdin = SP1Stdin::new();
     let mut proof;
 
