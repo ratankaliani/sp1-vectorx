@@ -4,9 +4,9 @@ version = "0.1.0"
 name = "vectorx-operator"
 edition = "2021"
 
-#[[bin]]
-#name = "operator"
-#path = "bin/operator.rs"
+[[bin]]
+name = "operator"
+path = "bin/operator.rs"
 
 [[bin]]
 name = "genesis"
@@ -41,7 +41,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
     "full",
     "bit-vec",
 ] }
-alloy-primitives = { version = "0.7.5", features=["serde"] }
+alloy-primitives = { version = "0.7.5", features = ["serde"] }
 alloy-sol-types = "0.7.5"
 anyhow = "1.0.68"
 clap = "4.4.9"

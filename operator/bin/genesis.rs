@@ -6,6 +6,8 @@
 //!
 //!
 //!
+mod operator;
+
 use avail_subxt::config::Header;
 use sp1_sdk::{HashableKey, ProverClient};
 use sp1_vectorx_script::input::RpcDataFetcher;
