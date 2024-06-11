@@ -45,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    proof = client.prove(&pk, stdin)?;
+    proof = client.prove_plonk(&pk, stdin)?;
 
     println!("Successfully generated and verified proof for the program!");
 
@@ -58,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
     log_proof_outputs(outputs);
 
     // Verify proof.
-    client.verify(&proof, &vk)?;
+    client.verify_plonk(&proof, &vk)?;
 
     // Save proof.
     proof.save("proof-with-io.json")?;
