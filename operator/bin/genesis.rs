@@ -24,14 +24,14 @@ async fn main() -> anyhow::Result<()> {
         .compute_authority_set_hash_for_block(header.number)
         .await;
 
-    println!("GENESIS_HEIGHT={:?}\nGENESIS_HEADER={}\nGENESIS_AUTHORITY_SET_ID={}\nGENESIS_AUTHORITY_SET_HASH={}\nVECTORX_PROGRAM_VKEY={}\nHEADER_RANGE_COMMITMENT_TREE_SIZE={}\nVERIFIER={}",
+    println!("GENESIS_HEIGHT={:?}\nGENESIS_HEADER={}\nGENESIS_AUTHORITY_SET_ID={}\nGENESIS_AUTHORITY_SET_HASH={}\nVECTORX_PROGRAM_VKEY={}\nHEADER_RANGE_COMMITMENT_TREE_SIZE={}",
              header.number,
              format!("{:#x}", header_hash),
              authority_set_id,
              format!("{:#x}", authority_set_hash),
              vk.bytes32(),
              512,
-             "mock");
+             );
 
     Ok(())
 }

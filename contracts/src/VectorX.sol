@@ -4,6 +4,7 @@ pragma solidity ^0.8.25;
 import {IVectorX} from "./interfaces/IVectorX.sol";
 import {TimelockedUpgradeable} from "@succinctx/upgrades/TimelockedUpgradeable.sol";
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
+import "forge-std/console.sol";
 
 /// @notice VectorX is a light client for Avail's consensus.
 /// @dev The light client tracks both the state of Avail's Grandpa consensus and Vector, Avail's
@@ -89,7 +90,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         latestBlock = _params.height;
         vectorXProgramVkey = _params.vectorXProgramVkey;
         verifier = ISP1Verifier(_params.verifier);
-
         headerRangeCommitmentTreeSize = _params.headerRangeCommitmentTreeSize;
 
         __TimelockedUpgradeable_init(_params.guardian, _params.guardian);
@@ -107,8 +107,8 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
     /// @notice Update the genesis state of the light client.
     function updateGenesisState(uint32 _height, bytes32 _header, uint64 _authoritySetId, bytes32 _authoritySetHash)
-        external
-        onlyGuardian
+    external
+    onlyGuardian
     {
         blockHeightToHeaderHash[_height] = _header;
         latestBlock = _height;
@@ -129,8 +129,8 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     ) external onlyGuardian {
         assert(
             _startBlocks.length > 0 && _startBlocks.length == _endBlocks.length
-                && _endBlocks.length == _headerHashes.length && _headerHashes.length == _dataRootCommitments.length
-                && _dataRootCommitments.length == _stateRootCommitments.length
+            && _endBlocks.length == _headerHashes.length && _headerHashes.length == _dataRootCommitments.length
+            && _dataRootCommitments.length == _stateRootCommitments.length
         );
         require(_startBlocks[0] == latestBlock);
         for (uint256 i = 0; i < _startBlocks.length; i++) {
@@ -249,7 +249,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         (uint8 proofTypeInt,, bytes memory rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
         ProofType proofType = ProofType(proofTypeInt);
         (uint64 _currentAuthoritySetId, bytes32 currentAuthoritySetHash, bytes32 newAuthoritySetHash) =
-            abi.decode(rotateOutputs, (uint64, bytes32, bytes32));
+                            abi.decode(rotateOutputs, (uint64, bytes32, bytes32));
 
         if (proofType != ProofType.RotateProof) {
             revert InvalidProofType();

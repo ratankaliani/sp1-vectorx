@@ -6,6 +6,7 @@ import {Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
 import {VectorX} from "../src/VectorX.sol";
+import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract VectorXScript is Script {
     using stdJson for string;
@@ -27,10 +28,21 @@ contract VectorXScript is Script {
         bytes32 vectorXProgramVkey = bytes32(vm.envBytes32("VECTORX_PROGRAM_VKEY"));
         SP1Verifier verifier = new SP1Verifier();
 
-        vectorx = new VectorX();
-        vectorx.initialize(VectorX.InitParameters(
-            guardian, height, header, authoritySetId, authoritySetHash, headerRangeCommitmentTreeSize, vectorXProgramVkey, address(verifier)
-        ));
+        VectorX vectorxImpl = new VectorX();
+        vectorx = VectorX(address(new ERC1967Proxy(
+            address(vectorxImpl),
+            ""
+        )));
+        vectorx.initialize(VectorX.InitParameters({
+            guardian: guardian,
+            height: height,
+            header: header,
+            authoritySetId: authoritySetId,
+            authoritySetHash: authoritySetHash,
+            headerRangeCommitmentTreeSize: headerRangeCommitmentTreeSize,
+            vectorXProgramVkey: vectorXProgramVkey,
+            verifier: address(verifier)
+        }));
 
         vm.stopBroadcast();
 
