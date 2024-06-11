@@ -1,53 +1,37 @@
-use clap::Parser;
-use sp1_sdk::{utils::setup_logger, HashableKey, MockProver, Prover};
-use tendermint_operator::{util::TendermintRPCClient, TENDERMINT_ELF};
+//! To build the binary:
+//!
+//!     `cargo build --release --bin genesis`
+//!
+//!
+//!
+//!
+//!
+use avail_subxt::config::Header;
+use sp1_sdk::{HashableKey, ProverClient};
+use sp1_vectorx_script::input::RpcDataFetcher;
+const VECTORX_ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
-#[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
-struct GenesisArgs {
-    /// Trusted block.
-    #[clap(long)]
-    trusted_block: Option<u64>,
-}
-
-/// Fetches the trusted header hash for the given block height. Defaults to the latest block height.
-/// Example:
-/// ```
-/// RUST_LOG=info cargo run --bin genesis --release
-/// ```
-///
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    dotenv::dotenv().ok();
-    setup_logger();
+    let fetcher = RpcDataFetcher::new().await;
+    let client = ProverClient::new();
+    let (_pk, vk) = client.setup(VECTORX_ELF);
 
-    let args = GenesisArgs::parse();
+    let header = fetcher.get_head().await;
+    let header_hash = header.hash();
+    let authority_set_id = fetcher.get_authority_set_id(header.number).await;
+    let authority_set_hash = fetcher
+        .compute_authority_set_hash_for_block(header.number)
+        .await;
 
-    // Generate the vkey digest to use in the contract.
-    let prover = MockProver::new();
-    let (_, vk) = prover.setup(TENDERMINT_ELF);
-    println!("VKEY_DIGEST={}", vk.bytes32());
-
-    let tendermint_client = TendermintRPCClient::default();
-
-    if let Some(trusted_block) = args.trusted_block {
-        let commit = tendermint_client.get_commit(trusted_block).await?;
-        println!("TRUSTED_HEIGHT={}", trusted_block);
-        println!(
-            "TRUSTED_HEADER_HASH={}",
-            commit.result.signed_header.header.hash()
-        );
-    } else {
-        let latest_commit = tendermint_client.get_latest_commit().await?;
-        println!(
-            "TRUSTED_HEIGHT={}",
-            latest_commit.result.signed_header.header.height.value()
-        );
-        println!(
-            "TRUSTED_HEADER_HASH={}",
-            latest_commit.result.signed_header.header.hash()
-        );
-    }
+    println!("GENESIS_HEIGHT={:?}\nGENESIS_HEADER={}\nGENESIS_AUTHORITY_SET_ID={}\nGENESIS_AUTHORITY_SET_HASH={}\nVECTORX_PROGRAM_VKEY={}\nHEADER_RANGE_COMMITMENT_TREE_SIZE={}\nVERIFIER={}",
+             header.number,
+             format!("{:#x}", header_hash),
+             authority_set_id,
+             format!("{:#x}", authority_set_hash),
+             vk.bytes32(),
+             512,
+             "mock");
 
     Ok(())
 }

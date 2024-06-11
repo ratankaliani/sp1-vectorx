@@ -9,3 +9,35 @@ Primitives will contain the libraries for types as well as common functions used
 
 ## Early Benchmarking on the Performance
 1. Let's try hashing 35K bytes with Blake2B
+
+## Run the VectorX Light Client
+
+Get the genesis parameters for the `VectorX` contract.
+
+```
+cargo run --bin genesis
+```
+
+Update `contracts/.env` following `contracts/README.md`.
+
+Deploy the `VectorX` contract with genesis parameters.
+
+In `contracts/`, run
+
+```
+forge install
+
+source .env
+
+forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --verifier etherscan --etherscan-api-key $ETHERSCAN_API_KEY
+```
+
+Update `.env` following `.env.example`.
+
+Run `VectorX` script to update the LC continuously.
+
+In `/`, run
+
+```
+cargo run --bin vectorx
+```
