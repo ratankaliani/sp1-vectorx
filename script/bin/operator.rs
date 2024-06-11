@@ -1,15 +1,17 @@
 //! A simple script to generate and verify the proof of a given program.
 
+use alloy_primitives::U64;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 use alloy_sol_types::{sol, SolCall, SolType, SolValue};
-use vectorx_operator::ContractClient;
+use sp1_vectorx_script::contract::ContractClient;
 
 sol! {
     contract VectorX {
         uint64 public latestAuthoritySetId;
+        uint32 public latestBlock;
 
         function rotate(bytes calldata proof, bytes calldata publicValues) external;
     }
@@ -17,13 +19,19 @@ sol! {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenv::dotenv().ok();
     setup_logger();
+
     let contract_client = ContractClient::default();
+
     // Supply an initial authority set id, trusted block, and target block.
-    // TODO: Read from args/contract in the future.
-    let authority_set_id = 100u64;
-    let trusted_block = 272355;
-    let target_block = 272534;
+    let authority_set_id_call_data = VectorX::latestAuthoritySetIdCall {}.abi_encode();
+    let authority_set_id = contract_client.read(authority_set_id_call_data).await?;
+    let authority_set_id = U64::abi_decode(&authority_set_id, true).unwrap();
+
+    let trusted_block_call_data = VectorX::latestBlockCall {}.abi_encode();
+    let trusted_block = contract_client.read(trusted_block_call_data).await?;
+    let target_block = trusted_block + 512;
 
     let proof_type = ProofType::RotateProof;
 
