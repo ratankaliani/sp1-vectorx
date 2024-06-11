@@ -8,6 +8,7 @@ Primitives will contain the libraries for types as well as common functions used
 4. How expensive would it be to do hashing inside of the program?
 
 ## Early Benchmarking on the Performance
+
 1. Let's try hashing 35K bytes with Blake2B
 
 ## Run the VectorX Light Client
@@ -29,7 +30,7 @@ forge install
 
 source .env
 
-forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast --verify --verifier etherscan --etherscan-api-key $ETHERSCAN_API_KEY
+forge script script/SP1Tendermint.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --etherscan-api-key $ETHERSCAN_API_KEY --broadcast --verify ```
 ```
 
 Update `.env` following `.env.example`.
