@@ -1,6 +1,6 @@
 //! A simple script to generate and verify the proof of a given program.
 
-use alloy_primitives::U64;
+use alloy_primitives::U256;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::input::RpcDataFetcher;
@@ -27,10 +27,13 @@ async fn main() -> anyhow::Result<()> {
     // Supply an initial authority set id, trusted block, and target block.
     let authority_set_id_call_data = VectorX::latestAuthoritySetIdCall {}.abi_encode();
     let authority_set_id = contract_client.read(authority_set_id_call_data).await?;
-    let authority_set_id = U64::abi_decode(&authority_set_id, true).unwrap();
+    let authority_set_id = U256::abi_decode(&authority_set_id, true).unwrap();
+    let authority_set_id: u64 = authority_set_id.try_into().unwrap();
 
     let trusted_block_call_data = VectorX::latestBlockCall {}.abi_encode();
     let trusted_block = contract_client.read(trusted_block_call_data).await?;
+    let trusted_block = U256::abi_decode(&trusted_block, true).unwrap();
+    let trusted_block: u32 = trusted_block.try_into().unwrap();
     let target_block = trusted_block + 512;
 
     let proof_type = ProofType::RotateProof;
@@ -79,6 +82,17 @@ async fn main() -> anyhow::Result<()> {
 
     // Save proof.
     proof.save("proof-with-io.json")?;
+
+    // Relay the proof to the contract.
+    let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
+    let verify_vectorx_proof_call_data = VectorX::rotateCall {
+        publicValues: proof.public_values.to_vec().into(),
+        proof: proof_as_bytes.into(),
+    }
+    .abi_encode();
+
+    contract_client.send(verify_vectorx_proof_call_data).await?;
+
     Ok(())
 }
 

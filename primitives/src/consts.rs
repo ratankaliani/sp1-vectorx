@@ -18,3 +18,7 @@ pub const ROTATE_OUTPUTS_LENGTH: usize = 32 * 3;
 
 // ABI-encoded length of final proof output.
 pub const PROOF_OUTPUT_LENGTH: usize = 544;
+
+// Max number of authorities this circuit currently supports.
+// TODO: Verify what to set this value to
+pub const MAX_AUTHORITY_SET_SIZE: usize = 300;
