@@ -85,10 +85,11 @@ impl VectorXOperator {
             .fetcher
             .get_header_range_inputs(trusted_block, target_block)
             .await;
-        let (target_justification, _) = self
+        let target_justification = self
             .fetcher
             .get_justification_data_for_block(target_block)
-            .await;
+            .await
+            .ok_or_else(|| anyhow::anyhow!("Failed to get justification data for block"))?;
 
         stdin.write(&proof_type);
         stdin.write(&header_range_inputs);
@@ -405,18 +406,13 @@ impl VectorXOperator {
                 return None;
             }
 
-            match self
+            if self
                 .fetcher
                 .get_justification_data_for_block(block_to_step_to)
                 .await
+                .is_some()
             {
-                Ok(justification_data) => {
-                    break;
-                }
-                Err(_) => {
-                    // Error occurred while retrieving justification data
-                    // Do nothing and continue the loop
-                }
+                break;
             }
             block_to_step_to += 1;
         }

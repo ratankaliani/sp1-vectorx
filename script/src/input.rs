@@ -323,7 +323,7 @@ impl RpcDataFetcher {
     pub async fn get_justification_data_for_block(
         &self,
         block_number: u32,
-    ) -> (CircuitJustification, Header) {
+    ) -> Option<(CircuitJustification, Header)> {
         // Note: The redis justification type is from VectorX, and we need to map it onto the
         // CircuitJustification SP1 VectorX type.
         let redis_justification = self
@@ -371,7 +371,7 @@ impl RpcDataFetcher {
             block_number: redis_justification.block_number,
             block_hash,
         };
-        (circuit_justification, header)
+        Some((circuit_justification, header))
     }
 
     /// Get the latest justification data. Because Avail does not store the justification data for
