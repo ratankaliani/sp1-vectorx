@@ -15,11 +15,8 @@ use sp1_vectorx_script::input::RpcDataFetcher;
 sol! {
     contract VectorX {
         bool public frozen;
-        address public gateway_deprecated;
         uint32 public latestBlock;
         uint64 public latestAuthoritySetId;
-        bytes32 public headerRangeFunctionId_deprecated;
-        bytes32 public rotateFunctionId_deprecated;
         mapping(uint32 => bytes32) public blockHeightToHeaderHash;
         mapping(uint64 => bytes32) public authoritySetIdToHash;
         mapping(bytes32 => bytes32) public dataRootCommitments;
@@ -32,16 +29,6 @@ sol! {
         function rotate(bytes calldata proof, bytes calldata publicValues) external;
     }
 }
-
-#[derive(Clone, Debug)]
-pub struct VectorXConfig {
-    address: Address,
-    chain_id: u32,
-}
-
-type RotateInputTuple = sol! { tuple(uint64, bytes32) };
-
-type HeaderRangeInputTuple = sol! { tuple(uint32, bytes32, uint64, bytes32, uint32) };
 
 struct VectorXOperator {
     contract: ContractClient,
@@ -79,79 +66,13 @@ impl VectorXOperator {
     async fn request_header_range(
         &mut self,
         trusted_block: u32,
-        trusted_authority_set_id: u64,
         target_block: u32,
-        header_range_function_id: B256,
-    ) -> Result<String> {
-        let (trusted_header_hash, trusted_authority_set_hash) = self
-            .get_header_range_input_data(trusted_block, trusted_authority_set_id)
-            .await;
-
-        let input = HeaderRangeInputTuple::abi_encode_packed(&(
-            trusted_block,
-            trusted_header_hash,
-            trusted_authority_set_id,
-            trusted_authority_set_hash,
-            target_block,
-        ));
-
-        // Encode the call into calldata.
-        // Note: Use vector_x because the calls are the same.
-        let commit_header_range_call = vector_x::CommitHeaderRangeCall {
-            authority_set_id: trusted_authority_set_id,
-            target_block,
-        };
-        let function_data = commit_header_range_call.encode();
-
-        let request_id = client
-            .submit_platform_request(
-                config.chain_id,
-                config.address,
-                function_data.into(),
-                header_range_function_id,
-                Bytes::copy_from_slice(&input),
-            )
-            .await?;
-
-        Ok(request_id)
+    ) -> anyhow::Result<()> {
+        Ok(())
     }
 
-    async fn request_rotate(
-        &mut self,
-        current_authority_set_id: u64,
-        rotate_function_id: B256,
-    ) -> Result<String> {
-        let client = self.get_succinct_client();
-        let config = self.get_config();
-
-        let current_authority_set_hash = self.get_rotate_input_data(current_authority_set_id).await;
-
-        info!(
-            "Current authority set hash: {:?}",
-            hex::encode(current_authority_set_hash)
-        );
-
-        let input = RotateInputTuple::abi_encode_packed(&(
-            current_authority_set_id,
-            current_authority_set_hash,
-        ));
-
-        let rotate_call = vector_x::RotateCall {
-            current_authority_set_id,
-        };
-        let function_data = rotate_call.encode();
-
-        let request_id = client
-            .submit_platform_request(
-                config.chain_id,
-                config.address,
-                function_data.into(),
-                rotate_function_id,
-                Bytes::copy_from_slice(&input),
-            )
-            .await?;
-
-        Ok(request_id)
+    async fn request_rotate(&mut self, current_authority_set_id: u64) -> anyhow::Result<()> {
+        Ok(())
     }
 
     async fn find_and_request_rotate(&mut self) {
