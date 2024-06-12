@@ -8,9 +8,12 @@ use ethers::abi::AbiEncode;
 use ethers::contract::abigen;
 use ethers::providers::{Http, Provider};
 use log::{error, info};
+use sp1_sdk::{ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin, SP1VerifyingKey};
 use sp1_vectorx_primitives::consts::MAX_AUTHORITY_SET_SIZE;
+use sp1_vectorx_primitives::types::ProofType;
 use sp1_vectorx_script::contract::ContractClient;
 use sp1_vectorx_script::input::RpcDataFetcher;
+const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 sol! {
     contract VectorX {
@@ -32,7 +35,10 @@ sol! {
 
 struct VectorXOperator {
     contract: ContractClient,
-    data_fetcher: RpcDataFetcher,
+    fetcher: RpcDataFetcher,
+    client: ProverClient,
+    pk: SP1ProvingKey,
+    vk: SP1VerifyingKey,
 }
 
 #[derive(Debug)]
@@ -52,14 +58,19 @@ struct RotateContractData {
 }
 
 impl VectorXOperator {
-    async fn new(data_fetcher: RpcDataFetcher) -> Self {
+    async fn new(fetcher: RpcDataFetcher) -> Self {
         dotenv::dotenv().ok();
 
         let contract = ContractClient::default();
+        let client = ProverClient::new();
+        let (pk, vk) = client.setup(ELF);
 
         Self {
             contract,
-            data_fetcher,
+            fetcher,
+            client,
+            pk,
+            vk,
         }
     }
 
@@ -67,12 +78,42 @@ impl VectorXOperator {
         &mut self,
         trusted_block: u32,
         target_block: u32,
-    ) -> anyhow::Result<()> {
-        Ok(())
+    ) -> Result<SP1PlonkBn254Proof> {
+        let mut stdin: SP1Stdin = SP1Stdin::new();
+
+        let proof_type = ProofType::HeaderRangeProof;
+        let header_range_inputs = self
+            .fetcher
+            .get_header_range_inputs(trusted_block, target_block)
+            .await;
+        let (target_justification, _) = self
+            .fetcher
+            .get_justification_data_for_block(target_block)
+            .await;
+
+        stdin.write(&proof_type);
+        stdin.write(&header_range_inputs);
+        stdin.write(&target_justification);
+
+        self.client.prove_plonk(&self.pk, stdin)
     }
 
-    async fn request_rotate(&mut self, current_authority_set_id: u64) -> anyhow::Result<()> {
-        Ok(())
+    async fn request_rotate(
+        &mut self,
+        current_authority_set_id: u64,
+    ) -> Result<SP1PlonkBn254Proof> {
+        let mut stdin: SP1Stdin = SP1Stdin::new();
+
+        let proof_type = ProofType::RotateProof;
+        let rotate_input = self
+            .fetcher
+            .get_rotate_inputs(current_authority_set_id)
+            .await;
+
+        stdin.write(&proof_type);
+        stdin.write(&rotate_input);
+
+        self.client.prove_plonk(&self.pk, stdin)
     }
 
     async fn find_and_request_rotate(&mut self) {
