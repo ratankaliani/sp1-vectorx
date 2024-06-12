@@ -12,6 +12,7 @@ blake2 = "0.10.6"
 sha2 = "0.10.8"
 alloy-primitives = { version = "0.7.5", features=["serde"] }
 alloy-sol-types = "0.7.5"
+hex = "0.4.3"
 
 [patch.crates-io]
 ed25519-consensus = { git = "https://github.com/sp1-patches/ed25519-consensus", branch = "patch-v2.1.0" }

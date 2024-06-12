@@ -78,7 +78,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     }
 
     function VERSION() external pure override returns (string memory) {
-        return "2.0.0";
+        return "1.0.0";
     }
 
     /// @dev Initializes the contract.
@@ -242,15 +242,21 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @param proof The proof bytes
     /// @param publicValues The public commitments from the proof
     function rotate(bytes calldata proof, bytes calldata publicValues) external {
+
+        console.log("rotate called");
         if (frozen) {
             revert ContractFrozen();
         }
+        console.log("unfrozen");
 
-        (uint8 proofTypeInt,, bytes memory rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
+        (uint8 proofTypeInt,bytes memory hi, bytes memory rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
+
+        console.log("first decode");
         ProofType proofType = ProofType(proofTypeInt);
+        console.log("enum");
         (uint64 _currentAuthoritySetId, bytes32 currentAuthoritySetHash, bytes32 newAuthoritySetHash) =
                             abi.decode(rotateOutputs, (uint64, bytes32, bytes32));
-
+        console.log("second decode");
         if (proofType != ProofType.RotateProof) {
             revert InvalidProofType();
         }

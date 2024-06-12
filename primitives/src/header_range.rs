@@ -67,7 +67,7 @@ pub fn verify_header_range(
         decoded_headers_data[decoded_headers_data.len() - 1].block_number,
         header_range_inputs.target_block
     );
-  
+
     // Stage 3: Verify the justification is valid.
     verify_simple_justification(
         target_justification,
@@ -81,14 +81,13 @@ pub fn verify_header_range(
         header_range_inputs.merkle_tree_size,
     );
 
-    // Return the ABI encoded HeaderRangeOutputs.
     HeaderRangeOutputs::abi_encode(&(
         header_range_inputs.trusted_block,
         header_range_inputs.trusted_header_hash,
         header_range_inputs.authority_set_id,
         header_range_inputs.authority_set_hash,
         header_range_inputs.target_block,
-        header_hashes[header_hashes.len()-1],
+        header_hashes[header_hashes.len() - 1],
         state_root_commitment,
         data_root_commitment,
     ))

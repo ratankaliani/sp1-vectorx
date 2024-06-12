@@ -1501,6 +1501,7 @@ dependencies = [
  "alloy-sol-types",
  "blake2",
  "ed25519-consensus",
+ "hex",
  "sha2 0.10.8",
  "sp1-vectorx-primitives",
  "sp1-zkvm",

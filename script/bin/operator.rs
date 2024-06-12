@@ -1,7 +1,7 @@
 //! A simple script to generate and verify the proof of a given program.
 
 use alloy_primitives::U256;
-use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
+use sp1_sdk::{utils::setup_logger, MockProver, Prover, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
@@ -14,6 +14,7 @@ sol! {
         uint32 public latestBlock;
 
         function rotate(bytes calldata proof, bytes calldata publicValues) external;
+        function commitHeaderRange(bytes calldata proof, bytes calldata publicValues) external;
     }
 }
 
@@ -30,11 +31,8 @@ async fn main() -> anyhow::Result<()> {
     let authority_set_id = U256::abi_decode(&authority_set_id, true).unwrap();
     let authority_set_id: u64 = authority_set_id.try_into().unwrap();
 
-    let trusted_block_call_data = VectorX::latestBlockCall {}.abi_encode();
-    let trusted_block = contract_client.read(trusted_block_call_data).await?;
-    let trusted_block = U256::abi_decode(&trusted_block, true).unwrap();
-    let trusted_block: u32 = trusted_block.try_into().unwrap();
-    let target_block = trusted_block + 512;
+    let trusted_block = 272355;
+    let target_block = 272534;
 
     let proof_type = ProofType::RotateProof;
 
@@ -50,8 +48,10 @@ async fn main() -> anyhow::Result<()> {
             let header_range_inputs = fetcher
                 .get_header_range_inputs(trusted_block, target_block)
                 .await;
-            let (target_justification, _) =
-                fetcher.get_justification_data_for_block(target_block).await;
+            let target_justification = fetcher
+                .get_justification_data_for_block(target_block)
+                .await
+                .ok_or_else(|| anyhow::anyhow!("Failed to get justification data for block"))?;
 
             stdin.write(&proof_type);
             stdin.write(&header_range_inputs);
@@ -71,6 +71,8 @@ async fn main() -> anyhow::Result<()> {
 
     // Read outputs.
     let mut output_bytes = [0u8; 544];
+
+    println!("Proof length 1: {:?}", proof.public_values.to_vec().len());
     proof.public_values.read_slice(&mut output_bytes);
     let outputs: (u8, alloy_primitives::Bytes, alloy_primitives::Bytes) =
         ProofOutput::abi_decode(&output_bytes, true)?;
@@ -80,15 +82,21 @@ async fn main() -> anyhow::Result<()> {
 
     // Verify proof.
     client.verify_plonk(&proof, &vk)?;
-
+    println!("Proof verified successfully!");
     // Save proof.
     proof.save("proof-with-io.json")?;
+    println!("Proof saved to proof-with-io.json");
 
     // Relay the proof to the contract.
     let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
-    let verify_vectorx_proof_call_data = VectorX::rotateCall {
-        publicValues: proof.public_values.to_vec().into(),
+
+    let proof_output_string_bytes = hex::encode(&proof.public_values.to_vec());
+
+    println!("ProofOutput: {:?}", proof_output_string_bytes);
+
+    let verify_vectorx_proof_call_data = VectorX::commitHeaderRangeCall {
         proof: proof_as_bytes.into(),
+        publicValues: proof.public_values.to_vec().into(),
     }
     .abi_encode();
 

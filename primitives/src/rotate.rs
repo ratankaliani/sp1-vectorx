@@ -1,6 +1,10 @@
+use crate::{
+    compute_authority_set_commitment, consts::ROTATE_OUTPUTS_LENGTH, decode_scale_compact_int,
+    types::RotateInputs, types::RotateOutputs, verify_encoded_validators,
+    verify_simple_justification,
+};
 use alloy_primitives::B256;
 use alloy_sol_types::SolType;
-use crate::{compute_authority_set_commitment, consts::ROTATE_OUTPUTS_LENGTH, decode_scale_compact_int, types::RotateInputs, types::RotateOutputs,  verify_encoded_validators, verify_simple_justification};
 
 /// Verify the justification from the current authority set on the epoch end header and return the new
 /// authority set commitment.

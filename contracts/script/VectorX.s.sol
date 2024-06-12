@@ -5,8 +5,10 @@ import "forge-std/console.sol";
 import {Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
+import {SP1MockVerifier} from "@sp1-contracts/SP1MockVerifier.sol";
 import {VectorX} from "../src/VectorX.sol";
 import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
+
 
 contract VectorXScript is Script {
     using stdJson for string;
@@ -26,7 +28,7 @@ contract VectorXScript is Script {
         bytes32 authoritySetHash = bytes32(vm.envBytes32("GENESIS_AUTHORITY_SET_HASH"));
         uint32 headerRangeCommitmentTreeSize = uint32(vm.envUint("HEADER_RANGE_COMMITMENT_TREE_SIZE"));
         bytes32 vectorXProgramVkey = bytes32(vm.envBytes32("VECTORX_PROGRAM_VKEY"));
-        SP1Verifier verifier = new SP1Verifier();
+        SP1MockVerifier verifier = new SP1MockVerifier();
 
         VectorX vectorxImpl = new VectorX();
         vectorx = VectorX(address(new ERC1967Proxy(

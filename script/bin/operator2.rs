@@ -8,7 +8,9 @@ use ethers::abi::AbiEncode;
 use ethers::contract::abigen;
 use ethers::providers::{Http, Provider};
 use log::{error, info};
-use sp1_sdk::{ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin, SP1VerifyingKey};
+use sp1_sdk::{
+    MockProver, Prover, ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
+};
 use sp1_vectorx_primitives::consts::MAX_AUTHORITY_SET_SIZE;
 use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::contract::ContractClient;
@@ -37,7 +39,7 @@ sol! {
 struct VectorXOperator {
     contract: ContractClient,
     fetcher: RpcDataFetcher,
-    client: ProverClient,
+    client: MockProver,
     pk: SP1ProvingKey,
     vk: SP1VerifyingKey,
 }
@@ -61,7 +63,7 @@ impl VectorXOperator {
         dotenv::dotenv().ok();
 
         let contract = ContractClient::default();
-        let client = ProverClient::new();
+        let client = MockProver::new();
         let (pk, vk) = client.setup(ELF);
 
         Self {
