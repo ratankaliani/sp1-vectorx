@@ -90,9 +90,11 @@ async fn main() -> anyhow::Result<()> {
     // Relay the proof to the contract.
     let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
 
+    println!("Proof: {:?}", &proof.proof.encoded_proof);
+
     let proof_output_string_bytes = hex::encode(&proof.public_values.to_vec());
 
-    println!("ProofOutput: {:?}", proof_output_string_bytes);
+    println!("PublicValues: {:?}", proof_output_string_bytes);
 
     let verify_vectorx_proof_call_data = VectorX::commitHeaderRangeCall {
         proof: proof_as_bytes.into(),

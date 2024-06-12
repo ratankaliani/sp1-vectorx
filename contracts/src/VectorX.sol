@@ -71,6 +71,12 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         address verifier;
     }
 
+    struct ProofOutputs {
+        uint8 ProofType;
+        bytes HeaderRangeOutputs;
+        bytes RotateOutputs;
+    }
+
     /// @notice The type of proof that is being verified.
     enum ProofType {
         HeaderRangeProof,
@@ -107,8 +113,8 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
     /// @notice Update the genesis state of the light client.
     function updateGenesisState(uint32 _height, bytes32 _header, uint64 _authoritySetId, bytes32 _authoritySetHash)
-    external
-    onlyGuardian
+        external
+        onlyGuardian
     {
         blockHeightToHeaderHash[_height] = _header;
         latestBlock = _height;
@@ -129,8 +135,8 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     ) external onlyGuardian {
         assert(
             _startBlocks.length > 0 && _startBlocks.length == _endBlocks.length
-            && _endBlocks.length == _headerHashes.length && _headerHashes.length == _dataRootCommitments.length
-            && _dataRootCommitments.length == _stateRootCommitments.length
+                && _endBlocks.length == _headerHashes.length && _headerHashes.length == _dataRootCommitments.length
+                && _dataRootCommitments.length == _stateRootCommitments.length
         );
         require(_startBlocks[0] == latestBlock);
         for (uint256 i = 0; i < _startBlocks.length; i++) {
@@ -242,26 +248,20 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @param proof The proof bytes
     /// @param publicValues The public commitments from the proof
     function rotate(bytes calldata proof, bytes calldata publicValues) external {
-
-        console.log("rotate called");
         if (frozen) {
             revert ContractFrozen();
         }
-        console.log("unfrozen");
 
-        (uint8 proofTypeInt,bytes memory hi, bytes memory rotateOutputs) = abi.decode(publicValues, (uint8, bytes, bytes));
+        ProofOutputs memory proofOutput = abi.decode(publicValues, (ProofOutputs));
 
-        console.log("first decode");
-        ProofType proofType = ProofType(proofTypeInt);
-        console.log("enum");
-        (uint64 _currentAuthoritySetId, bytes32 currentAuthoritySetHash, bytes32 newAuthoritySetHash) =
-                            abi.decode(rotateOutputs, (uint64, bytes32, bytes32));
-        console.log("second decode");
+        ProofType proofType = ProofType(proofOutput.ProofType);
+        (uint64 currentAuthoritySetId, bytes32 currentAuthoritySetHash, bytes32 newAuthoritySetHash) =
+            abi.decode(proofOutput.RotateOutputs, (uint64, bytes32, bytes32));
         if (proofType != ProofType.RotateProof) {
             revert InvalidProofType();
         }
 
-        bytes32 currentAuthoritySetHashStored = authoritySetIdToHash[_currentAuthoritySetId];
+        bytes32 currentAuthoritySetHashStored = authoritySetIdToHash[currentAuthoritySetId];
         // Note: Occurs if requesting a new authority set id that is not the next authority set id.
         if (currentAuthoritySetHash == bytes32(0)) {
             revert AuthoritySetNotFound();
@@ -270,7 +270,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert AuthoritySetMismatch();
         }
 
-        bytes32 nextAuthoritySetHash = authoritySetIdToHash[_currentAuthoritySetId + 1];
+        bytes32 nextAuthoritySetHash = authoritySetIdToHash[currentAuthoritySetId + 1];
         if (nextAuthoritySetHash != bytes32(0)) {
             revert NextAuthoritySetExists();
         }
@@ -279,9 +279,9 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         verifier.verifyProof(vectorXProgramVkey, publicValues, proof);
 
         // Store the authority set hash for the next authority set id.
-        authoritySetIdToHash[_currentAuthoritySetId + 1] = newAuthoritySetHash;
+        authoritySetIdToHash[currentAuthoritySetId + 1] = newAuthoritySetHash;
 
-        emit AuthoritySetStored(_currentAuthoritySetId + 1, newAuthoritySetHash);
+        emit AuthoritySetStored(currentAuthoritySetId + 1, newAuthoritySetHash);
     }
 
     /// @notice Update the verification key hash if the SP1 program was updated.
