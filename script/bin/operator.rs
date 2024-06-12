@@ -72,7 +72,8 @@ async fn main() -> anyhow::Result<()> {
     // Read outputs.
     let mut output_bytes = [0u8; 544];
     proof.public_values.read_slice(&mut output_bytes);
-    let outputs = ProofOutput::abi_decode(&output_bytes, true)?;
+    let outputs: (u8, alloy_primitives::Bytes, alloy_primitives::Bytes) =
+        ProofOutput::abi_decode(&output_bytes, true)?;
 
     // Log proof outputs.
     log_proof_outputs(outputs);

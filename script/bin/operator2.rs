@@ -1,7 +1,7 @@
 use std::cmp::min;
 use std::env;
 
-use alloy_primitives::{Address, Bytes, FixedBytes, B256};
+use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
 use alloy_sol_types::{sol, SolCall, SolType, SolValue};
 use anyhow::Result;
 use ethers::abi::AbiEncode;
@@ -10,7 +10,7 @@ use ethers::providers::{Http, Provider};
 use log::{error, info};
 use sp1_sdk::{ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin, SP1VerifyingKey};
 use sp1_vectorx_primitives::consts::MAX_AUTHORITY_SET_SIZE;
-use sp1_vectorx_primitives::types::ProofType;
+use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::contract::ContractClient;
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
@@ -30,6 +30,7 @@ sol! {
         address public verifier;
 
         function rotate(bytes calldata proof, bytes calldata publicValues) external;
+        function commitHeaderRange(bytes calldata proof, bytes calldata publicValues) external;
     }
 }
 
@@ -47,14 +48,12 @@ struct HeaderRangeContractData {
     avail_current_block: u32,
     header_range_commitment_tree_size: u32,
     next_authority_set_hash_exists: bool,
-    header_range_function_id: B256,
 }
 
 #[derive(Debug)]
 struct RotateContractData {
     current_block: u32,
     next_authority_set_hash_exists: bool,
-    rotate_function_id: B256,
 }
 
 impl VectorXOperator {
@@ -119,13 +118,13 @@ impl VectorXOperator {
     async fn find_and_request_rotate(&mut self) {
         let rotate_contract_data = self.get_contract_data_for_rotate().await;
 
-        let head = self.data_fetcher.get_head().await;
+        let head = self.fetcher.get_head().await;
         let head_block = head.number;
-        let head_authority_set_id = self.data_fetcher.get_authority_set_id(head_block - 1).await;
+        let head_authority_set_id = self.fetcher.get_authority_set_id(head_block - 1).await;
 
         // The current authority set id is the authority set id of the block before the current block.
         let current_authority_set_id = self
-            .data_fetcher
+            .fetcher
             .get_authority_set_id(rotate_contract_data.current_block - 1)
             .await;
 
@@ -138,18 +137,25 @@ impl VectorXOperator {
             );
 
             // Request a rotate for the next authority set id.
-            match self
-                .request_rotate(
-                    current_authority_set_id,
-                    rotate_contract_data.rotate_function_id,
-                )
-                .await
-            {
-                Ok(request_id) => {
-                    info!("Rotate request submitted: {}", request_id)
+            match self.request_rotate(current_authority_set_id).await {
+                Ok(mut proof) => {
+                    self.log_proof_outputs(&mut proof);
+                    self.client.verify_plonk(&proof, &self.vk).unwrap();
+
+                    let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
+                    let verify_vectorx_proof_call_data = VectorX::rotateCall {
+                        publicValues: proof.public_values.to_vec().into(),
+                        proof: proof_as_bytes.into(),
+                    }
+                    .abi_encode();
+
+                    self.contract
+                        .send(verify_vectorx_proof_call_data)
+                        .await
+                        .expect("Failed to post/verify rotate proof onchain.");
                 }
                 Err(e) => {
-                    error!("Rotate request failed: {}", e);
+                    error!("Rotate proof generation failed: {}", e);
                 }
             };
         }
@@ -161,13 +167,13 @@ impl VectorXOperator {
 
         // The current authority set id is the authority set id of the block before the current block.
         let current_authority_set_id = self
-            .data_fetcher
+            .fetcher
             .get_authority_set_id(header_range_contract_data.vectorx_latest_block - 1)
             .await;
 
         // Get the last justified block by the current authority set id.
         let last_justified_block = self
-            .data_fetcher
+            .fetcher
             .last_justified_block(current_authority_set_id)
             .await;
 
@@ -207,84 +213,141 @@ impl VectorXOperator {
         match self
             .request_header_range(
                 header_range_contract_data.vectorx_latest_block,
-                request_authority_set_id,
                 block_to_step_to.unwrap(),
-                header_range_contract_data.header_range_function_id,
             )
             .await
         {
-            Ok(request_id) => {
-                info!(
-                    "Header range request submitted from block {} to block {} with request ID: {}",
-                    header_range_contract_data.vectorx_latest_block,
-                    block_to_step_to.unwrap(),
-                    request_id
-                )
+            Ok(mut proof) => {
+                self.log_proof_outputs(&mut proof);
+                self.client.verify_plonk(&proof, &self.vk).unwrap();
+
+                let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
+                let verify_vectorx_proof_call_data = VectorX::commitHeaderRangeCall {
+                    publicValues: proof.public_values.to_vec().into(),
+                    proof: proof_as_bytes.into(),
+                }
+                .abi_encode();
+
+                self.contract
+                    .send(verify_vectorx_proof_call_data)
+                    .await
+                    .expect("Failed to post/verify header range proof onchain.");
             }
             Err(e) => {
-                error!("Header range request failed: {}", e);
+                error!("Header range proof generation failed: {}", e);
             }
         };
     }
 
+    fn log_proof_outputs(&mut self, proof: &mut SP1PlonkBn254Proof) {
+        // Read output values.
+        let mut output_bytes = [0u8; 544];
+        proof.public_values.read_slice(&mut output_bytes);
+        let outputs: (u8, alloy_primitives::Bytes, alloy_primitives::Bytes) =
+            ProofOutput::abi_decode(&output_bytes, true).unwrap();
+
+        // Log proof outputs.
+        let proof_type = ProofType::from_uint(outputs.0).unwrap();
+        match proof_type {
+            ProofType::HeaderRangeProof => {
+                let header_range_outputs =
+                    HeaderRangeOutputs::abi_decode(&outputs.1, true).unwrap();
+                println!("Generated Proof Type: Header Range Proof");
+                println!("Header Range Outputs: {:?}", header_range_outputs);
+            }
+            ProofType::RotateProof => {
+                let rotate_outputs = RotateOutputs::abi_decode(&outputs.2, true).unwrap();
+                println!("Generated Proof Type: Rotate Proof");
+                println!("Rotate Outputs: {:?}", rotate_outputs)
+            }
+        }
+    }
+
     // Current block, step_range_max and whether next authority set hash exists.
     async fn get_contract_data_for_header_range(&mut self) -> HeaderRangeContractData {
-        let header_range_function_id: B256 =
-            FixedBytes(self.contract.header_range_function_id().await.unwrap());
-        let vectorx_latest_block = self.contract.latest_block().await.unwrap();
-        let header_range_commitment_tree_size = self
+        let vectorx_latest_block_call_data = VectorX::latestBlockCall {}.abi_encode();
+        let vectorx_latest_block = self
             .contract
-            .header_range_commitment_tree_size()
+            .read(vectorx_latest_block_call_data)
             .await
             .unwrap();
+        let vectorx_latest_block = U256::abi_decode(&vectorx_latest_block, true).unwrap();
+        let vectorx_latest_block: u32 = vectorx_latest_block.try_into().unwrap();
 
-        let avail_current_block = self.data_fetcher.get_head().await.number;
+        let header_range_commitment_tree_size_call_data =
+            VectorX::headerRangeCommitmentTreeSizeCall {}.abi_encode();
+        let header_range_commitment_tree_size = self
+            .contract
+            .read(header_range_commitment_tree_size_call_data)
+            .await
+            .unwrap();
+        let header_range_commitment_tree_size =
+            U256::abi_decode(&header_range_commitment_tree_size, true).unwrap();
+        let header_range_commitment_tree_size: u32 =
+            header_range_commitment_tree_size.try_into().unwrap();
+
+        let avail_current_block = self.fetcher.get_head().await.number;
 
         let vectorx_current_authority_set_id = self
-            .data_fetcher
+            .fetcher
             .get_authority_set_id(vectorx_latest_block - 1)
             .await;
         let next_authority_set_id = vectorx_current_authority_set_id + 1;
 
+        let next_authority_set_hash_call_data = VectorX::authoritySetIdToHashCall {
+            _0: next_authority_set_id,
+        }
+        .abi_encode();
         let next_authority_set_hash = self
             .contract
-            .authority_set_id_to_hash(next_authority_set_id)
+            .read(next_authority_set_hash_call_data)
             .await
             .unwrap();
+        let next_authority_set_hash = B256::abi_decode(&next_authority_set_hash, true).unwrap();
 
         HeaderRangeContractData {
             vectorx_latest_block,
             avail_current_block,
             header_range_commitment_tree_size,
-            next_authority_set_hash_exists: B256::from_slice(&next_authority_set_hash)
-                != B256::ZERO,
-            header_range_function_id,
+            next_authority_set_hash_exists: next_authority_set_hash != B256::ZERO,
         }
     }
 
     // Current block and whether next authority set hash exists.
     async fn get_contract_data_for_rotate(&mut self) -> RotateContractData {
-        let rotate_function_id: B256 =
-            FixedBytes(self.contract.rotate_function_id().await.unwrap());
-        let current_block = self.contract.latest_block().await.unwrap();
+        // Fetch the current block from the contract
+        let current_block_call_data = VectorX::latestBlockCall {}.abi_encode();
+        let current_block = self.contract.read(current_block_call_data).await.unwrap();
+        let current_block = U256::abi_decode(&current_block, true).unwrap();
+        let current_block: u32 = current_block.try_into().unwrap();
 
+        // Fetch the current authority set id from the contract
+        let current_authority_set_id_call_data = VectorX::latestAuthoritySetIdCall {}.abi_encode();
         let current_authority_set_id = self
-            .data_fetcher
-            .get_authority_set_id(current_block - 1)
-            .await;
-        let next_authority_set_id = current_authority_set_id + 1;
-
-        let next_authority_set_hash = self
             .contract
-            .authority_set_id_to_hash(next_authority_set_id)
+            .read(current_authority_set_id_call_data)
             .await
             .unwrap();
+        let current_authority_set_id = U256::abi_decode(&current_authority_set_id, true).unwrap();
+        let current_authority_set_id: u64 = current_authority_set_id.try_into().unwrap();
 
+        // Check if the next authority set id exists in the contract
+        let next_authority_set_id_call_data = VectorX::authoritySetIdToHashCall {
+            _0: current_authority_set_id + 1,
+        }
+        .abi_encode();
+        let next_authority_set_hash = self
+            .contract
+            .read(next_authority_set_id_call_data)
+            .await
+            .unwrap();
+        let next_authority_set_hash = B256::abi_decode(&next_authority_set_hash, true).unwrap();
+        let next_authority_set_hash_exists = next_authority_set_hash != B256::ZERO;
+
+        // Return the fetched data
         RotateContractData {
             current_block,
-            next_authority_set_hash_exists: B256::from_slice(&next_authority_set_hash)
-                != B256::ZERO,
-            rotate_function_id,
+            next_authority_set_hash_exists,
         }
     }
 
@@ -301,10 +364,7 @@ impl VectorXOperator {
         avail_current_block: u32,
         authority_set_id: u64,
     ) -> Option<u32> {
-        let last_justified_block = self
-            .data_fetcher
-            .last_justified_block(authority_set_id)
-            .await;
+        let last_justified_block = self.fetcher.last_justified_block(authority_set_id).await;
 
         // Step to the last justified block of the current epoch if it is in range. When the last
         // justified block is 0, the VectorX contract's latest epoch is the current epoch on the
@@ -332,11 +392,6 @@ impl VectorXOperator {
             return None;
         }
 
-        // If dummy operator, return the block to step to.
-        if self.is_dummy_operator {
-            return Some(block_to_step_to);
-        }
-
         // Check that block_to_step_to has a valid justification. If not, iterate up until the maximum_vectorx_target_block
         // to find a valid justification. If we're unable to find a justification, something has gone
         // deeply wrong with the jusitification indexer.
@@ -350,13 +405,18 @@ impl VectorXOperator {
                 return None;
             }
 
-            if self
-                .data_fetcher
-                .get_justification_from_block::<MAX_AUTHORITY_SET_SIZE>(block_to_step_to)
+            match self
+                .fetcher
+                .get_justification_data_for_block(block_to_step_to)
                 .await
-                .is_ok()
             {
-                break;
+                Ok(justification_data) => {
+                    break;
+                }
+                Err(_) => {
+                    // Error occurred while retrieving justification data
+                    // Do nothing and continue the loop
+                }
             }
             block_to_step_to += 1;
         }
@@ -366,7 +426,7 @@ impl VectorXOperator {
 
     async fn run(&mut self) {
         loop {
-            self.data_fetcher = RpcDataFetcher::new().await;
+            self.fetcher = RpcDataFetcher::new().await;
 
             let loop_delay_mins = get_loop_delay_mins();
             let block_interval = get_update_delay_blocks();
@@ -410,7 +470,10 @@ fn get_update_delay_blocks() -> u32 {
 
 #[tokio::main]
 async fn main() {
-    env::set_var("RUST_LOG", "info");
+    unsafe {
+        env::set_var("RUST_LOG", "info");
+    }
+
     dotenv::dotenv().ok();
     env_logger::init();
 
