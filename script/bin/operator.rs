@@ -31,6 +31,11 @@ async fn main() -> anyhow::Result<()> {
     let authority_set_id = U256::abi_decode(&authority_set_id, true).unwrap();
     let authority_set_id: u64 = authority_set_id.try_into().unwrap();
 
+    // Potentially not working; irrelevant anyway as we're switching to operator2.
+    // let trusted_block = contract_client.read(trusted_block_call_data).await?;
+    // let trusted_block = U256::abi_decode(&trusted_block, true).unwrap();
+    // let trusted_block: u32 = trusted_block.try_into().unwrap();
+    // let target_block = trusted_block + 512;
     let trusted_block = 272355;
     let target_block = 272534;
 

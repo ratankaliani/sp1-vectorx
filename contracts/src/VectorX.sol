@@ -4,7 +4,6 @@ pragma solidity ^0.8.25;
 import {IVectorX} from "./interfaces/IVectorX.sol";
 import {TimelockedUpgradeable} from "@succinctx/upgrades/TimelockedUpgradeable.sol";
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
-import "forge-std/console.sol";
 
 /// @notice VectorX is a light client for Avail's consensus.
 /// @dev The light client tracks both the state of Avail's Grandpa consensus and Vector, Avail's
