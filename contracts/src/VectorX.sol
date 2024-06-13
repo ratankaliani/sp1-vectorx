@@ -204,9 +204,6 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert TrustedHeaderNotFound();
         }
         if (hro.trusted_header_hash != trustedHeaderStored) {
-            console.logBytes32(hro.trusted_header_hash);
-            console.logBytes32(trustedHeaderStored);
-
             revert TrustedHeaderMismatch();
         }
 
