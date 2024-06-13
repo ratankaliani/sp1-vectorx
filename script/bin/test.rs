@@ -1,17 +1,15 @@
-//! A simple script to generate and verify the proof of a given program.
+//! A simple script to test the generation of proofs.
 
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
+use sp1_vectorx_primitives::types::ProofType;
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
-use alloy_sol_types::SolType;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     setup_logger();
 
     // Supply an initial authority set id, trusted block, and target block.
-    // TODO: Read from args/contract in the future.
     let authority_set_id = 74u64;
     let trusted_block = 272355;
     let target_block = 272534;
