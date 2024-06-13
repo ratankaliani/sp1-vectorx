@@ -331,8 +331,13 @@ impl RpcDataFetcher {
         let redis_justification = self
             .redis
             .get_justification(&self.avail_chain_id, block_number)
-            .await
-            .unwrap();
+            .await;
+
+        if redis_justification.is_err() {
+            return None;
+        }
+
+        let redis_justification = redis_justification.unwrap();
 
         let block_hash = self.get_block_hash(redis_justification.block_number).await;
 

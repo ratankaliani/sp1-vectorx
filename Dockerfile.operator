@@ -11,6 +11,9 @@ ENV PATH="/usr/local/go/bin:$PATH"
 
 # Install the Succinct toolchain
 RUN curl -L https://sp1.succinct.xyz | bash && ~/.sp1/bin/sp1up
+# Check cargo prove is installed
+ENV PATH="/root/.sp1/bin:$PATH"
+RUN cargo prove --version
 
 # Set the working directory
 WORKDIR /app
@@ -19,6 +22,7 @@ WORKDIR /app
 COPY script/ /app/script/
 COPY program/ /app/program/
 COPY primitives/ /app/primitives/
+COPY .env /app/
 
 # Run the VectorX operator from script directory
 CMD ["sh", "-c", "cd script && cargo run --bin operator --release"]

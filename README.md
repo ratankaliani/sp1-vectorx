@@ -10,6 +10,7 @@ Implementation of [Vector X](https://github.com/succinctlabs/vectorx) in Rust fo
     update the light client.
 - `/contracts`: The contract's source code and deployment scripts. Backwards-compatible with the
     original VectorX implementation in case we need to upgrade.
+- `/query`: Contains the logic for querying data root proofs from the contracts.
 
 ## Demo Contract
 
