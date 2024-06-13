@@ -1,7 +1,7 @@
 //! A simple script to generate and verify the proof of a given program.
 
 use alloy_primitives::U256;
-use sp1_sdk::{utils::setup_logger, MockProver, Prover, ProverClient, SP1Stdin};
+use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");

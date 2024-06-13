@@ -1,17 +1,11 @@
 use std::cmp::min;
 use std::env;
 
-use alloy_primitives::{Address, Bytes, FixedBytes, B256, U256};
+use alloy_primitives::{B256, U256};
 use alloy_sol_types::{sol, SolCall, SolType, SolValue};
 use anyhow::Result;
-use ethers::abi::AbiEncode;
-use ethers::contract::abigen;
-use ethers::providers::{Http, Provider};
 use log::{error, info};
-use sp1_sdk::{
-    MockProver, Prover, ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin, SP1VerifyingKey,
-};
-use sp1_vectorx_primitives::consts::MAX_AUTHORITY_SET_SIZE;
+use sp1_sdk::{ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin, SP1VerifyingKey};
 use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::contract::ContractClient;
 use sp1_vectorx_script::input::RpcDataFetcher;
@@ -39,7 +33,7 @@ sol! {
 struct VectorXOperator {
     contract: ContractClient,
     fetcher: RpcDataFetcher,
-    client: MockProver,
+    client: ProverClient,
     pk: SP1ProvingKey,
     vk: SP1VerifyingKey,
 }
@@ -63,7 +57,7 @@ impl VectorXOperator {
         dotenv::dotenv().ok();
 
         let contract = ContractClient::default();
-        let client = MockProver::new();
+        let client = ProverClient::new();
         let (pk, vk) = client.setup(ELF);
 
         Self {
@@ -91,7 +85,7 @@ impl VectorXOperator {
         let curr_authority_set_id = self.fetcher.get_authority_set_id(target_block - 1).await;
         let target_authority_set_id = self.fetcher.get_authority_set_id(target_block).await;
 
-        let mut target_justification;
+        let target_justification;
         // This is an epoch end block, fetch using the get_justification_data_for epoch end block
         if curr_authority_set_id == target_authority_set_id - 1 {
             target_justification = self
@@ -155,11 +149,8 @@ impl VectorXOperator {
             // Request a rotate for the next authority set id.
             match self.request_rotate(current_authority_set_id).await {
                 Ok(mut proof) => {
-                    println!("Logging outputs");
                     self.log_proof_outputs(&mut proof);
-                    println!("Starting plonk verification");
                     self.client.verify_plonk(&proof, &self.vk).unwrap();
-                    println!("Plonk verified");
                     let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
                     let verify_vectorx_proof_call_data = VectorX::rotateCall {
                         publicValues: proof.public_values.to_vec().into(),
@@ -167,12 +158,10 @@ impl VectorXOperator {
                     }
                     .abi_encode();
 
-                    println!("Sending proof to contract");
                     self.contract
                         .send(verify_vectorx_proof_call_data)
                         .await
                         .expect("Failed to post/verify rotate proof onchain.");
-                    println!("Done!! yippie");
                 }
                 Err(e) => {
                     error!("Rotate proof generation failed: {}", e);
@@ -421,7 +410,7 @@ impl VectorXOperator {
 
         // Check that block_to_step_to has a valid justification. If not, iterate up until the maximum_vectorx_target_block
         // to find a valid justification. If we're unable to find a justification, something has gone
-        // deeply wrong with the jusitification indexer.
+        // deeply wrong with the justification indexer.
         loop {
             if block_to_step_to > vectorx_current_block + header_range_commitment_tree_size {
                 info!(
