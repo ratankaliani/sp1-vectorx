@@ -51,6 +51,12 @@ cd script
 cargo run --bin operator --release
 ```
 
+### Run with Docker
+
+```
+docker run -d --name my_vectorx_operator sp1-vectorx-operator
+```
+
 ## Cycle Count
 
 Header Range
