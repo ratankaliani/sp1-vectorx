@@ -32,7 +32,6 @@ sol! {
 
 struct VectorXOperator {
     contract: ContractClient,
-    fetcher: RpcDataFetcher,
     client: ProverClient,
     pk: SP1ProvingKey,
     vk: SP1VerifyingKey,
@@ -53,7 +52,7 @@ struct RotateContractData {
 }
 
 impl VectorXOperator {
-    async fn new(fetcher: RpcDataFetcher) -> Self {
+    async fn new() -> Self {
         dotenv::dotenv().ok();
 
         let contract = ContractClient::default();
@@ -62,7 +61,6 @@ impl VectorXOperator {
 
         Self {
             contract,
-            fetcher,
             client,
             pk,
             vk,
@@ -82,8 +80,9 @@ impl VectorXOperator {
             .get_header_range_inputs(trusted_block, target_block)
             .await;
 
-        let curr_authority_set_id = self.fetcher.get_authority_set_id(target_block - 1).await;
-        let target_authority_set_id = self.fetcher.get_authority_set_id(target_block).await;
+        let fetcher = RpcDataFetcher::new().await;
+        let curr_authority_set_id = fetcher.get_authority_set_id(target_block - 1).await;
+        let target_authority_set_id = fetcher.get_authority_set_id(target_block).await;
 
         let target_justification;
         // This is an epoch end block, fetch using the get_justification_data_for epoch end block
@@ -128,9 +127,10 @@ impl VectorXOperator {
     async fn find_and_request_rotate(&mut self) {
         let rotate_contract_data = self.get_contract_data_for_rotate().await;
 
-        let head = self.fetcher.get_head().await;
+        let fetcher = RpcDataFetcher::new().await;
+        let head = fetcher.get_head().await;
         let head_block = head.number;
-        let head_authority_set_id = self.fetcher.get_authority_set_id(head_block - 1).await;
+        let head_authority_set_id = fetcher.get_authority_set_id(head_block - 1).await;
 
         // The current authority set id is the authority set id of the block before the current block.
         let current_authority_set_id = self
@@ -300,7 +300,8 @@ impl VectorXOperator {
         let header_range_commitment_tree_size: u32 =
             header_range_commitment_tree_size.try_into().unwrap();
 
-        let avail_current_block = self.fetcher.get_head().await.number;
+        let fetcher = RpcDataFetcher::new().await;
+        let avail_current_block = fetcher.get_head().await.number;
 
         let vectorx_current_authority_set_id = self
             .fetcher
@@ -378,7 +379,8 @@ impl VectorXOperator {
         avail_current_block: u32,
         authority_set_id: u64,
     ) -> Option<u32> {
-        let last_justified_block = self.fetcher.last_justified_block(authority_set_id).await;
+        let fetcher = RpcDataFetcher::new().await;
+        let last_justified_block = fetcher.last_justified_block(authority_set_id).await;
 
         println!("Last justified block: {:?}", last_justified_block);
 
@@ -438,8 +440,6 @@ impl VectorXOperator {
 
     async fn run(&mut self) {
         loop {
-            self.fetcher = RpcDataFetcher::new().await;
-
             let loop_delay_mins = get_loop_delay_mins();
             let block_interval = get_update_delay_blocks();
 
@@ -485,8 +485,6 @@ async fn main() {
     dotenv::dotenv().ok();
     env_logger::init();
 
-    let data_fetcher = RpcDataFetcher::new().await;
-
-    let mut operator = VectorXOperator::new(data_fetcher).await;
+    let mut operator = VectorXOperator::new().await;
     operator.run().await;
 }

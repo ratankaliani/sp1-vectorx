@@ -11,6 +11,10 @@ Implementation of [Vector X](https://github.com/succinctlabs/vectorx) in Rust fo
 - `/contracts`: The contract's source code and deployment scripts. Backwards-compatible with the
     original VectorX implementation in case we need to upgrade.
 
+## Demo Contract
+
+An example contract using SP1 Vector
+
 ## Run the VectorX Light Client
 
 Get the genesis parameters for the `VectorX` contract.
@@ -49,7 +53,7 @@ cargo run --bin operator --release
 ## Cycle Count
 
 Header Range
-- ~200M cycles. Primarily dominated by Blake2B hashing of the headers in the header range commitment tree.
+- ~M cycles. Primarily dominated by Blake2B hashing of the headers in the header range commitment tree.
 
 Rotate
-- ~XM cycles.
+- ~211M cycles.
