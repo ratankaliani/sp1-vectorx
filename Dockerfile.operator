@@ -1,9 +1,17 @@
 FROM golang:1.22 AS go-builder
 
-FROM rustlang/rust:nightly-bullseye-slim AS rust-builder
+FROM debian:bookworm-slim AS rust-builder
 
 # Dependencies
 RUN apt update && apt install -y clang curl libssl-dev git pkg-config dialog
+
+# Install Rust
+RUN apt-get update && \
+    apt-get install -y curl build-essential && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+# Set the environment variable for Rust
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install Go 1.22
 COPY --from=go-builder /usr/local/go /usr/local/go
@@ -13,7 +21,7 @@ ENV PATH="/usr/local/go/bin:$PATH"
 RUN curl -L https://sp1.succinct.xyz | bash && ~/.sp1/bin/sp1up
 # Check cargo prove is installed
 ENV PATH="/root/.sp1/bin:$PATH"
-RUN cargo prove --version
+RUN cargo --version && cargo prove --version
 
 # Set the working directory
 WORKDIR /app
