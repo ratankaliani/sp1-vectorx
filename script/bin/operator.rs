@@ -30,7 +30,6 @@ struct VectorXOperator {
     contract: ContractClient,
     client: ProverClient,
     pk: SP1ProvingKey,
-    vk: SP1VerifyingKey,
 }
 
 #[derive(Debug)]
@@ -59,7 +58,6 @@ impl VectorXOperator {
             contract,
             client,
             pk,
-            vk,
         }
     }
 
