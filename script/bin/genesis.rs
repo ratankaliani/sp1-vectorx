@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
              format!("{:#x}", authority_set_hash),
              vk.bytes32(),
              512,
-             );
+    );
 
     Ok(())
 }
