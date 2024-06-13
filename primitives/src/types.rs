@@ -31,8 +31,8 @@ pub type ProofOutput = sol! {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum ProofType {
-    HeaderRangeProof,
-    RotateProof,
+    HeaderRangeProof = 0,
+    RotateProof = 1,
 }
 
 impl ProofType {
