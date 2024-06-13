@@ -1,11 +1,15 @@
 # SP1 Vector X
 
-Primitives will contain the libraries for types as well as common functions used in verification which include:
+## Overview
 
-1. Verifying signatures.
-2. Decoding the header.
-3. Constructing and verifyingthe authority set hash.
-4. How expensive would it be to do hashing inside of the program?
+Implementation of [Vector X](https://github.com/succinctlabs/vectorx) in Rust for SP1.
+
+- `/program`: The SP1 VectorX program.
+- `/primitives`: Libraries for types and helper functions used in the program.
+- `/script`: Scripts for getting the contract's genesis parameters and deploying the operator to 
+    update the light client.
+- `/contracts`: The contract's source code and deployment scripts. Backwards-compatible with the
+    original VectorX implementation in case we need to upgrade.
 
 ## Run the VectorX Light Client
 
@@ -33,12 +37,16 @@ Update `.env` following `.env.example`.
 
 Run `VectorX` script to update the LC continuously.
 
-In `/`, run
+In `/script`, run
 
 ```
-cargo run --bin vectorx
+cargo run --bin script --release
 ```
 
 ## Cycle Count
 
-The rough cycle count of SP1 VectorX is ~200M cycles.
+Header Range
+- ~200M cycles. Primarily dominated by Blake2B hashing of the headers in the header range commitment tree.
+
+Rotate
+- ~XM cycles.
