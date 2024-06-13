@@ -1,0 +1,24 @@
+FROM golang:1.22 AS go-builder
+
+FROM rustlang/rust:nightly-bullseye-slim AS rust-builder
+
+# Dependencies
+RUN apt update && apt install -y clang curl libssl-dev git pkg-config dialog
+
+# Install Go 1.22
+COPY --from=go-builder /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:$PATH"
+
+# Install the Succinct toolchain
+RUN curl -L https://sp1.succinct.xyz | bash && ~/.sp1/bin/sp1up
+
+# Set the working directory
+WORKDIR /app
+
+# Copy only the script, program, and primitives directories
+COPY script/ /app/script/
+COPY program/ /app/program/
+COPY primitives/ /app/primitives/
+
+# Run the VectorX operator from script directory
+CMD ["sh", "-c", "cd script && cargo run --bin operator --release"]
