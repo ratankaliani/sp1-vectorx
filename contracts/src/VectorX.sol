@@ -16,7 +16,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
     /// @notice The address of the gateway contract.
     /// @dev DEPRECATED: Do not use.
-    address public _deprecated;
+    address public gateway_deprecated;
 
     /// @notice The latest block that has been committed.
     uint32 public latestBlock;
@@ -26,11 +26,11 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
 
     /// @notice The function for requesting a header range.
     /// @dev DEPRECATED: Do not use.
-    bytes32 public _deprecated;
+    bytes32 public headerRangeFunctionId_deprecated;
 
     /// @notice The function for requesting a rotate.
     /// @dev DEPRECATED: Do not use.
-    bytes32 public _deprecated;
+    bytes32 public rotateFunctionId_deprecated;
 
     /// @notice Maps block height to the header hash of the block.
     mapping(uint32 => bytes32) public blockHeightToHeaderHash;

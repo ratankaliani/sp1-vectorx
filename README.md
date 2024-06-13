@@ -16,7 +16,9 @@ Implementation of [Vector X](https://github.com/succinctlabs/vectorx) in Rust fo
 Get the genesis parameters for the `VectorX` contract.
 
 ```
-cargo run --bin genesis
+cd script
+
+cargo run --bin genesis --release
 ```
 
 Update `contracts/.env` following `contracts/README.md`.
@@ -37,9 +39,10 @@ Update `.env` following `.env.example`.
 
 Run `VectorX` script to update the LC continuously.
 
-In `/script`, run
 
 ```
+cd script
+
 cargo run --bin operator --release
 ```
 
