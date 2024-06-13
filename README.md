@@ -57,6 +57,10 @@ cargo run --bin operator --release
 docker run -d --name <NAME> sp1-vectorx-operator
 ```
 
+## Query Data Root Proofs
+
+See [Query.md](./Query.md)
+
 ## Cycle Count
 
 Header Range
