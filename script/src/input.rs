@@ -84,7 +84,9 @@ impl RpcDataFetcher {
             .compute_authority_set_hash_for_block(epoch_end_block - 1)
             .await;
 
-        let justification = self.get_justification_data_rotate(authority_set_id).await;
+        let justification = self
+            .get_justification_data_epoch_end_block(authority_set_id)
+            .await;
 
         let header_rotate_data = self.get_header_rotate(authority_set_id).await;
 
@@ -408,11 +410,11 @@ impl RpcDataFetcher {
         panic!("No justification found")
     }
 
-    /// Get the justification data for a rotate from the curr_authority_set_id to the next authority set id.
+    /// Get the justification data for an epoch end block from the curr_authority_set_id to the next authority set id.
     /// Fetch the authority set and justification proof for the last block in the current epoch. If the finality proof is a
     /// simple justification, return a CircuitJustification with the encoded precommit that all
     /// authorities sign, the validator signatures, and the authority set's pubkeys.
-    pub async fn get_justification_data_rotate(
+    pub async fn get_justification_data_epoch_end_block(
         &self,
         curr_authority_set_id: u64,
     ) -> CircuitJustification {
@@ -539,7 +541,7 @@ mod tests {
         println!("header_hash {:?}", hex::encode(header_hash.0));
 
         let _ = fetcher
-            .get_justification_data_rotate(authority_set_id)
+            .get_justification_data_epoch_end_block(authority_set_id)
             .await;
     }
 

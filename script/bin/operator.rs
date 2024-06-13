@@ -32,14 +32,13 @@ async fn main() -> anyhow::Result<()> {
     let authority_set_id: u64 = authority_set_id.try_into().unwrap();
 
     // Potentially not working; irrelevant anyway as we're switching to operator2.
-    // let trusted_block = contract_client.read(trusted_block_call_data).await?;
-    // let trusted_block = U256::abi_decode(&trusted_block, true).unwrap();
-    // let trusted_block: u32 = trusted_block.try_into().unwrap();
-    // let target_block = trusted_block + 512;
-    let trusted_block = 272355;
-    let target_block = 272534;
+    let trusted_block_call_data = VectorX::latestBlockCall {}.abi_encode();
+    let trusted_block = contract_client.read(trusted_block_call_data).await?;
+    let trusted_block = U256::abi_decode(&trusted_block, true).unwrap();
+    let trusted_block: u32 = trusted_block.try_into().unwrap();
+    let target_block = trusted_block + 200;
 
-    let proof_type = ProofType::RotateProof;
+    let proof_type = ProofType::HeaderRangeProof;
 
     let fetcher = RpcDataFetcher::new().await;
     let client = ProverClient::new();
@@ -76,12 +75,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Read outputs.
     let mut output_bytes = [0u8; 544];
-
-    println!("Proof length 1: {:?}", proof.public_values.to_vec().len());
     proof.public_values.read_slice(&mut output_bytes);
-    let outputs: (u8, alloy_primitives::Bytes, alloy_primitives::Bytes) =
-        ProofOutput::abi_decode(&output_bytes, true)?;
-
+    let outputs = ProofOutput::abi_decode(&output_bytes, true)?;
+    println!("Proof Type: {:?}", outputs.0);
     // Log proof outputs.
     log_proof_outputs(outputs);
 

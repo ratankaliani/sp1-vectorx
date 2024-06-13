@@ -87,11 +87,24 @@ impl VectorXOperator {
             .fetcher
             .get_header_range_inputs(trusted_block, target_block)
             .await;
-        let target_justification = self
-            .fetcher
-            .get_justification_data_for_block(target_block)
-            .await
-            .ok_or_else(|| anyhow::anyhow!("Failed to get justification data for block"))?;
+
+        let curr_authority_set_id = self.fetcher.get_authority_set_id(target_block - 1).await;
+        let target_authority_set_id = self.fetcher.get_authority_set_id(target_block).await;
+
+        let mut target_justification;
+        // This is an epoch end block, fetch using the get_justification_data_for epoch end block
+        if curr_authority_set_id == target_authority_set_id - 1 {
+            target_justification = self
+                .fetcher
+                .get_justification_data_epoch_end_block(curr_authority_set_id)
+                .await;
+        } else {
+            (target_justification, _) = self
+                .fetcher
+                .get_justification_data_for_block(target_block)
+                .await
+                .ok_or_else(|| anyhow::anyhow!("Failed to get justification data for block"))?;
+        }
 
         stdin.write(&proof_type);
         stdin.write(&header_range_inputs);
@@ -142,9 +155,11 @@ impl VectorXOperator {
             // Request a rotate for the next authority set id.
             match self.request_rotate(current_authority_set_id).await {
                 Ok(mut proof) => {
+                    println!("Logging outputs");
                     self.log_proof_outputs(&mut proof);
+                    println!("Starting plonk verification");
                     self.client.verify_plonk(&proof, &self.vk).unwrap();
-
+                    println!("Plonk verified");
                     let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
                     let verify_vectorx_proof_call_data = VectorX::rotateCall {
                         publicValues: proof.public_values.to_vec().into(),
@@ -152,10 +167,12 @@ impl VectorXOperator {
                     }
                     .abi_encode();
 
+                    println!("Sending proof to contract");
                     self.contract
                         .send(verify_vectorx_proof_call_data)
                         .await
                         .expect("Failed to post/verify rotate proof onchain.");
+                    println!("Done!! yippie");
                 }
                 Err(e) => {
                     error!("Rotate proof generation failed: {}", e);
@@ -213,6 +230,11 @@ impl VectorXOperator {
         );
 
         // Request the header range proof to block_to_step_to.
+        println!(
+            "Trusted block: {}",
+            header_range_contract_data.vectorx_latest_block
+        );
+        println!("Target block: {}", block_to_step_to.unwrap());
         match self
             .request_header_range(
                 header_range_contract_data.vectorx_latest_block,
@@ -369,6 +391,8 @@ impl VectorXOperator {
     ) -> Option<u32> {
         let last_justified_block = self.fetcher.last_justified_block(authority_set_id).await;
 
+        println!("Last justified block: {:?}", last_justified_block);
+
         // Step to the last justified block of the current epoch if it is in range. When the last
         // justified block is 0, the VectorX contract's latest epoch is the current epoch on the
         // Avail chain.
@@ -417,6 +441,7 @@ impl VectorXOperator {
                 break;
             }
             block_to_step_to += 1;
+            println!("Block to step to: {:?}", block_to_step_to);
         }
 
         Some(block_to_step_to)
