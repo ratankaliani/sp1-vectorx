@@ -12,6 +12,10 @@ path = "bin/operator.rs"
 name = "genesis"
 path = "bin/genesis.rs"
 
+[[bin]]
+name = "test"
+path = "bin/test.rs"
+
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
 sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet", features = [

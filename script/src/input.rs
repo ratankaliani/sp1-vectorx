@@ -284,7 +284,7 @@ impl RpcDataFetcher {
             let pubkey_bytes = pubkey.0;
 
             // Verify the signature by this validator over the signed_message which is shared.
-            verify_signature(&pubkey_bytes, &signed_message, &signature);
+            verify_signature(pubkey_bytes, &signed_message, signature);
 
             pubkey_to_signature.insert(
                 precommit.clone().id.0,

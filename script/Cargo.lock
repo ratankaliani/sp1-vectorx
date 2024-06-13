@@ -8436,7 +8436,7 @@ dependencies = [
  "blake2",
  "clap 4.5.7",
  "dotenv",
- "ed25519-dalek",
+ "ed25519-consensus",
  "hex",
  "parity-scale-codec",
  "serde",

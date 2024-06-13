@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
 sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet" }
-ed25519-consensus = { version = "2", default-features = false }
+ed25519-consensus = { version = "2.1", default-features = false }
 blake2 = "0.10.6"
 sha2 = "0.10.8"
 alloy-primitives = { version = "0.7.5", features = ["serde"] }
@@ -15,4 +15,5 @@ alloy-sol-types = "0.7.5"
 
 [patch.crates-io]
 ed25519-consensus = { git = "https://github.com/sp1-patches/ed25519-consensus", branch = "patch-v2.1.0" }
+sha2-v0-9-9 = { git = "https://github.com/sp1-patches/RustCrypto-hashes-fork", package = "sha2", branch = "patch-sha2-v0.9.9" }
 sha2-v0-10-8 = { git = "https://github.com/sp1-patches/RustCrypto-hashes", package = "sha2", branch = "patch-v0.10.8" }

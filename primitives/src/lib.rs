@@ -1,4 +1,4 @@
-use ed25519_dalek::{Signature, Verifier, VerifyingKey};
+use ed25519_consensus::{Signature, VerificationKey};
 
 use types::CircuitJustification;
 
@@ -6,15 +6,15 @@ pub mod merkle;
 pub mod types;
 use sha2::{Digest as Sha256Digest, Sha256};
 pub mod consts;
-pub mod rotate;
 pub mod header_range;
+pub mod rotate;
 use alloy_primitives::B256;
 use consts::{PUBKEY_LENGTH, VALIDATOR_LENGTH};
 
 /// This function is useful for verifying that a Ed25519 signature is valid, it will panic if the signature is not valid.
-pub fn verify_signature(pubkey_bytes: &[u8; 32], signed_message: &[u8], signature: &[u8; 64]) {
-    let pubkey: VerifyingKey = VerifyingKey::from_bytes(pubkey_bytes).unwrap();
-    let verified = pubkey.verify(signed_message, &Signature::from_bytes(signature));
+pub fn verify_signature(pubkey_bytes: [u8; 32], signed_message: &[u8], signature: [u8; 64]) {
+    let pubkey: VerificationKey = VerificationKey::try_from(pubkey_bytes).unwrap();
+    let verified = pubkey.verify(&Signature::from(signature), signed_message);
     if verified.is_err() {
         panic!("Signature is not valid");
     }
@@ -50,9 +50,9 @@ pub fn verify_simple_justification(
         if let Some(signature) = &justification.signatures[i] {
             let signature: [u8; 64] = signature.as_slice().try_into().unwrap();
             verify_signature(
-                &justification.pubkeys[i],
+                justification.pubkeys[i].0,
                 &justification.signed_message,
-                &signature,
+                signature,
             );
             verified_signatures += 1;
 
