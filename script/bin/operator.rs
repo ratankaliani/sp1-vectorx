@@ -16,11 +16,7 @@ sol! {
         bool public frozen;
         uint32 public latestBlock;
         uint64 public latestAuthoritySetId;
-        // mapping(uint32 => bytes32) public blockHeightToHeaderHash;
         mapping(uint64 => bytes32) public authoritySetIdToHash;
-        // mapping(bytes32 => bytes32) public dataRootCommitments;
-        // mapping(bytes32 => bytes32) public stateRootCommitments;
-        // mapping(bytes32 => uint32) public rangeStartBlocks;s
         uint32 public headerRangeCommitmentTreeSize;
         bytes32 public vectorXProgramVkey;
         address public verifier;
@@ -121,7 +117,8 @@ impl VectorXOperator {
         self.client.prove_plonk(&self.pk, stdin)
     }
 
-    async fn find_and_request_rotate(&mut self) {
+    // Determine if a rotate is needed and request the proof if so. Returns Option<current_authority_set_id>.
+    async fn find_rotate(&mut self) -> Option<u64> {
         let rotate_contract_data = self.get_contract_data_for_rotate().await;
 
         let fetcher = RpcDataFetcher::new().await;
@@ -142,32 +139,13 @@ impl VectorXOperator {
                 current_authority_set_id + 1
             );
 
-            // Request a rotate for the next authority set id.
-            match self.request_rotate(current_authority_set_id).await {
-                Ok(mut proof) => {
-                    self.log_proof_outputs(&mut proof);
-                    self.client.verify_plonk(&proof, &self.vk).unwrap();
-                    let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
-                    let verify_vectorx_proof_call_data = VectorX::rotateCall {
-                        publicValues: proof.public_values.to_vec().into(),
-                        proof: proof_as_bytes.into(),
-                    }
-                    .abi_encode();
-
-                    self.contract
-                        .send(verify_vectorx_proof_call_data)
-                        .await
-                        .expect("Failed to post/verify rotate proof onchain.");
-                }
-                Err(e) => {
-                    error!("Rotate proof generation failed: {}", e);
-                }
-            };
+            return Some(current_authority_set_id);
         }
+        None
     }
 
-    // Ideally, post a header range update every ideal_block_interval blocks.
-    async fn find_and_request_header_range(&mut self, ideal_block_interval: u32) {
+    // Ideally, post a header range update every ideal_block_interval blocks. Returns Option<(latest_block, block_to_step_to)>.
+    async fn find_header_range(&mut self, ideal_block_interval: u32) -> Option<(u32, u32)> {
         let header_range_contract_data = self.get_contract_data_for_header_range().await;
 
         let fetcher = RpcDataFetcher::new().await;
@@ -187,7 +165,7 @@ impl VectorXOperator {
 
             // Check if the next authority set id exists in the contract. If not, a rotate is needed.
             if !header_range_contract_data.next_authority_set_hash_exists {
-                return;
+                return None;
             }
             request_authority_set_id = next_authority_set_id;
         }
@@ -203,51 +181,17 @@ impl VectorXOperator {
                 request_authority_set_id,
             )
             .await;
-        if block_to_step_to.is_none() {
-            return;
-        }
 
-        info!(
-            "Requesting header range with end block: {:?}.",
-            block_to_step_to.unwrap()
-        );
-
-        // Request the header range proof to block_to_step_to.
-        println!(
-            "Trusted block: {}",
-            header_range_contract_data.vectorx_latest_block
-        );
-        println!("Target block: {}", block_to_step_to.unwrap());
-        match self
-            .request_header_range(
+        if let Some(block_to_step_to) = block_to_step_to {
+            return Some((
                 header_range_contract_data.vectorx_latest_block,
-                block_to_step_to.unwrap(),
-            )
-            .await
-        {
-            Ok(mut proof) => {
-                self.log_proof_outputs(&mut proof);
-                self.client.verify_plonk(&proof, &self.vk).unwrap();
-
-                let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
-                let verify_vectorx_proof_call_data = VectorX::commitHeaderRangeCall {
-                    publicValues: proof.public_values.to_vec().into(),
-                    proof: proof_as_bytes.into(),
-                }
-                .abi_encode();
-
-                self.contract
-                    .send(verify_vectorx_proof_call_data)
-                    .await
-                    .expect("Failed to post/verify header range proof onchain.");
-            }
-            Err(e) => {
-                error!("Header range proof generation failed: {}", e);
-            }
-        };
+                block_to_step_to,
+            ));
+        }
+        None
     }
 
-    fn log_proof_outputs(&mut self, proof: &mut SP1PlonkBn254Proof) {
+    fn log_proof_outputs(&self, proof: &mut SP1PlonkBn254Proof) {
         // Read output values.
         let mut output_bytes = [0u8; 544];
         proof.public_values.read_slice(&mut output_bytes);
@@ -430,20 +374,92 @@ impl VectorXOperator {
         Some(block_to_step_to)
     }
 
+    async fn relay_header_range(&mut self, mut proof: SP1PlonkBn254Proof) {
+        self.log_proof_outputs(&mut proof);
+
+        let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
+        let verify_vectorx_proof_call_data = VectorX::commitHeaderRangeCall {
+            publicValues: proof.public_values.to_vec().into(),
+            proof: proof_as_bytes.into(),
+        }
+        .abi_encode();
+
+        let receipt = self
+            .contract
+            .send(verify_vectorx_proof_call_data)
+            .await
+            .expect("Failed to post/verify header range proof onchain.");
+
+        if let Some(receipt) = receipt {
+            println!("Transaction hash: {:?}", receipt.transaction_hash);
+        }
+    }
+
+    async fn relay_rotate(&self, mut proof: SP1PlonkBn254Proof) {
+        self.log_proof_outputs(&mut proof);
+
+        let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
+        let verify_vectorx_proof_call_data = VectorX::rotateCall {
+            publicValues: proof.public_values.to_vec().into(),
+            proof: proof_as_bytes.into(),
+        }
+        .abi_encode();
+
+        let receipt = self
+            .contract
+            .send(verify_vectorx_proof_call_data)
+            .await
+            .expect("Failed to post/verify rotate proof onchain.");
+
+        if let Some(receipt) = receipt {
+            println!("Transaction hash: {:?}", receipt.transaction_hash);
+        }
+    }
+
     async fn run(&mut self) {
         loop {
             let loop_delay_mins = get_loop_delay_mins();
             let block_interval = get_update_delay_blocks();
 
             // Check if there is a rotate available for the next authority set.
-            self.find_and_request_rotate().await;
+            let current_authority_set_id = self.find_rotate().await;
 
-            // Check if there is a header range request available.
-            self.find_and_request_header_range(block_interval).await;
+            // Request a rotate for the next authority set id.
+            if let Some(current_authority_set_id) = current_authority_set_id {
+                let proof = self.request_rotate(current_authority_set_id).await;
+                match proof {
+                    Ok(proof) => {
+                        self.relay_rotate(proof).await;
+                    }
+                    Err(e) => {
+                        error!("Rotate proof generation failed: {}", e);
+                    }
+                };
 
-            // Sleep for N minutes.
-            info!("Sleeping for {} minutes.", loop_delay_mins);
-            tokio::time::sleep(tokio::time::Duration::from_secs(60 * loop_delay_mins)).await;
+                // Check if there is a header range request available.
+                let header_range_request = self.find_header_range(block_interval).await;
+
+                if let Some(header_range_request) = header_range_request {
+                    // Request the header range proof to block_to_step_to.
+                    println!("Trusted block: {}", header_range_request.0);
+                    println!("Target block: {}", header_range_request.1);
+                    let proof = self
+                        .request_header_range(header_range_request.0, header_range_request.1)
+                        .await;
+                    match proof {
+                        Ok(proof) => {
+                            self.relay_header_range(proof).await;
+                        }
+                        Err(e) => {
+                            error!("Header range proof generation failed: {}", e);
+                        }
+                    };
+                }
+
+                // Sleep for N minutes.
+                info!("Sleeping for {} minutes.", loop_delay_mins);
+                tokio::time::sleep(tokio::time::Duration::from_secs(60 * loop_delay_mins)).await;
+            }
         }
     }
 }

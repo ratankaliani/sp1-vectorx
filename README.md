@@ -13,7 +13,7 @@ Implementation of [Vector X](https://github.com/succinctlabs/vectorx) in Rust fo
 
 ## Demo Contract
 
-An example contract using SP1 Vector
+An example contract using SP1 VectorX can be found on Sepolia [here](https://sepolia.etherscan.io/address/0x745B0a27F125Faa85BBe743f918c3741E2832236).
 
 ## Run the VectorX Light Client
 
@@ -57,3 +57,5 @@ Header Range
 
 Rotate
 - ~211M cycles.
+
+TODO: Confirm that the Ed precompile is patched correctly.
