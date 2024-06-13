@@ -7,10 +7,6 @@ Primitives will contain the libraries for types as well as common functions used
 3. Constructing and verifyingthe authority set hash.
 4. How expensive would it be to do hashing inside of the program?
 
-## Early Benchmarking on the Performance
-
-1. Let's try hashing 35K bytes with Blake2B
-
 ## Run the VectorX Light Client
 
 Get the genesis parameters for the `VectorX` contract.
@@ -42,3 +38,7 @@ In `/`, run
 ```
 cargo run --bin vectorx
 ```
+
+## Cycle Count
+
+The rough cycle count of SP1 VectorX is ~200M cycles.
