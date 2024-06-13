@@ -39,13 +39,31 @@ async fn main() -> anyhow::Result<()> {
         .compute_authority_set_hash_for_block(header.number)
         .await;
 
-    println!("GENESIS_HEIGHT={:?}\nGENESIS_HEADER={}\nGENESIS_AUTHORITY_SET_ID={}\nGENESIS_AUTHORITY_SET_HASH={}\nVECTORX_PROGRAM_VKEY={}\nHEADER_RANGE_COMMITMENT_TREE_SIZE={}",
-             header.number,
-             format!("{:#x}", header_hash),
-             authority_set_id,
-             format!("{:#x}", authority_set_hash),
-             vk.bytes32(),
-             512,
+    struct GenesisOutput {
+        genesis_height: u32,
+        genesis_header: String,
+        genesis_authority_set_id: u64,
+        genesis_authority_set_hash: String,
+        vectorx_program_vkey: String,
+        header_range_commitment_tree_size: u32,
+    }
+
+    let output = GenesisOutput {
+        genesis_height: header.number,
+        genesis_header: format!("{:#x}", header_hash),
+        genesis_authority_set_id: authority_set_id,
+        genesis_authority_set_hash: format!("{:#x}", authority_set_hash),
+        vectorx_program_vkey: vk.bytes32(),
+        header_range_commitment_tree_size: 512,
+    };
+
+    println!("GENESIS_HEIGHT={}\nGENESIS_HEADER={}\nGENESIS_AUTHORITY_SET_ID={}\nGENESIS_AUTHORITY_SET_HASH={}\nVECTORX_PROGRAM_VKEY={}\nHEADER_RANGE_COMMITMENT_TREE_SIZE={}",
+             output.genesis_height,
+             output.genesis_header,
+             output.genesis_authority_set_id,
+             output.genesis_authority_set_hash,
+             output.vectorx_program_vkey,
+             output.header_range_commitment_tree_size,
     );
 
     Ok(())
