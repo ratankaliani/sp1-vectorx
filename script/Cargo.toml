@@ -12,13 +12,11 @@ path = "bin/operator.rs"
 name = "genesis"
 path = "bin/genesis.rs"
 
-[[bin]]
-name = "operator2"
-path = "bin/operator2.rs"
-
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
-sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.4-testnet", features = ["plonk"] }
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.4-testnet", features = [
+    "plonk",
+] }
 ed25519-consensus = { version = "2", default-features = false }
 rand = "0.8"
 env_logger = { version = "0.9.0", default-features = false }

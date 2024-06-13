@@ -1494,7 +1494,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp1-vectorx-rotate-program"
+name = "sp1-vectorx-program"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
