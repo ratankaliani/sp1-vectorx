@@ -53,9 +53,7 @@ cargo run --bin operator --release
 ## Cycle Count
 
 Header Range
-- ~15M cycles. Primarily dominated by Blake2B hashing of the headers in the header range commitment tree.
+- Primarily dominated by Blake2B hashing of the headers in the header range commitment tree.
 
 Rotate
 - ~8M cycles.
-
-TODO: Confirm that the Ed precompile is patched correctly.
