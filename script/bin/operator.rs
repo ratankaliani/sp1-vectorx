@@ -52,7 +52,7 @@ impl VectorXOperator {
 
         let contract = ContractClient::default();
         let client = ProverClient::new();
-        let (pk, vk) = client.setup(ELF);
+        let (pk, _) = client.setup(ELF);
 
         Self {
             contract,
