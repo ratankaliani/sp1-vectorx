@@ -40,7 +40,7 @@ Run `VectorX` script to update the LC continuously.
 In `/script`, run
 
 ```
-cargo run --bin script --release
+cargo run --bin operator --release
 ```
 
 ## Cycle Count
