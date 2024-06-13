@@ -458,7 +458,7 @@ impl VectorXOperator {
 
 fn get_loop_delay_mins() -> u64 {
     let loop_delay_mins_env = env::var("LOOP_DELAY_MINS");
-    let mut loop_delay_mins = 15;
+    let mut loop_delay_mins = 60;
     if loop_delay_mins_env.is_ok() {
         loop_delay_mins = loop_delay_mins_env
             .unwrap()
@@ -470,7 +470,7 @@ fn get_loop_delay_mins() -> u64 {
 
 fn get_update_delay_blocks() -> u32 {
     let update_delay_blocks_env = env::var("UPDATE_DELAY_BLOCKS");
-    let mut update_delay_blocks = 180;
+    let mut update_delay_blocks = 360;
     if update_delay_blocks_env.is_ok() {
         update_delay_blocks = update_delay_blocks_env
             .unwrap()

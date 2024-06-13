@@ -14,7 +14,7 @@ path = "bin/genesis.rs"
 
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
-sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.4-testnet", features = [
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet", features = [
     "plonk",
 ] }
 ed25519-consensus = { version = "2", default-features = false }
@@ -59,7 +59,7 @@ redis = { version = "0.25.3", features = [
 ethers = "2.0.14"
 
 [build-dependencies]
-sp1-helper = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.4-testnet" }
+sp1-helper = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet" }
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
