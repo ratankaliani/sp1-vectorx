@@ -64,7 +64,7 @@ impl VectorXOperator {
     }
 
     async fn request_header_range(
-        &mut self,
+        &self,
         trusted_block: u32,
         target_block: u32,
     ) -> Result<SP1PlonkBn254Proof> {
@@ -100,10 +100,7 @@ impl VectorXOperator {
         self.client.prove_plonk(&self.pk, stdin)
     }
 
-    async fn request_rotate(
-        &mut self,
-        current_authority_set_id: u64,
-    ) -> Result<SP1PlonkBn254Proof> {
+    async fn request_rotate(&self, current_authority_set_id: u64) -> Result<SP1PlonkBn254Proof> {
         let fetcher = RpcDataFetcher::new().await;
 
         let mut stdin: SP1Stdin = SP1Stdin::new();
@@ -118,7 +115,7 @@ impl VectorXOperator {
     }
 
     // Determine if a rotate is needed and request the proof if so. Returns Option<current_authority_set_id>.
-    async fn find_rotate(&mut self) -> Option<u64> {
+    async fn find_rotate(&self) -> Option<u64> {
         let rotate_contract_data = self.get_contract_data_for_rotate().await;
 
         let fetcher = RpcDataFetcher::new().await;
@@ -145,7 +142,7 @@ impl VectorXOperator {
     }
 
     // Ideally, post a header range update every ideal_block_interval blocks. Returns Option<(latest_block, block_to_step_to)>.
-    async fn find_header_range(&mut self, ideal_block_interval: u32) -> Option<(u32, u32)> {
+    async fn find_header_range(&self, ideal_block_interval: u32) -> Option<(u32, u32)> {
         let header_range_contract_data = self.get_contract_data_for_header_range().await;
 
         let fetcher = RpcDataFetcher::new().await;
@@ -216,7 +213,7 @@ impl VectorXOperator {
     }
 
     // Current block, step_range_max and whether next authority set hash exists.
-    async fn get_contract_data_for_header_range(&mut self) -> HeaderRangeContractData {
+    async fn get_contract_data_for_header_range(&self) -> HeaderRangeContractData {
         let fetcher = RpcDataFetcher::new().await;
 
         let vectorx_latest_block_call_data = VectorX::latestBlockCall {}.abi_encode();
@@ -266,7 +263,7 @@ impl VectorXOperator {
     }
 
     // Current block and whether next authority set hash exists.
-    async fn get_contract_data_for_rotate(&mut self) -> RotateContractData {
+    async fn get_contract_data_for_rotate(&self) -> RotateContractData {
         // Fetch the current block from the contract
         let current_block_call_data = VectorX::latestBlockCall {}.abi_encode();
         let current_block = self.contract.read(current_block_call_data).await.unwrap();
@@ -309,7 +306,7 @@ impl VectorXOperator {
     // 2. If the block has a valid justification, return the block number.
     // 3. If the block has no valid justification, return None.
     async fn find_block_to_step_to(
-        &mut self,
+        &self,
         ideal_block_interval: u32,
         header_range_commitment_tree_size: u32,
         vectorx_current_block: u32,
@@ -374,7 +371,8 @@ impl VectorXOperator {
         Some(block_to_step_to)
     }
 
-    async fn relay_header_range(&mut self, mut proof: SP1PlonkBn254Proof) {
+    /// Relay a header range proof to the SP1 VectorX contract.
+    async fn relay_header_range(&self, mut proof: SP1PlonkBn254Proof) {
         self.log_proof_outputs(&mut proof);
 
         let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
@@ -395,6 +393,7 @@ impl VectorXOperator {
         }
     }
 
+    /// Relay a rotate proof to the SP1 VectorX contract.
     async fn relay_rotate(&self, mut proof: SP1PlonkBn254Proof) {
         self.log_proof_outputs(&mut proof);
 
@@ -416,7 +415,7 @@ impl VectorXOperator {
         }
     }
 
-    async fn run(&mut self) {
+    async fn run(&self) {
         loop {
             let loop_delay_mins = get_loop_delay_mins();
             let block_interval = get_update_delay_blocks();
@@ -435,31 +434,31 @@ impl VectorXOperator {
                         error!("Rotate proof generation failed: {}", e);
                     }
                 };
-
-                // Check if there is a header range request available.
-                let header_range_request = self.find_header_range(block_interval).await;
-
-                if let Some(header_range_request) = header_range_request {
-                    // Request the header range proof to block_to_step_to.
-                    println!("Trusted block: {}", header_range_request.0);
-                    println!("Target block: {}", header_range_request.1);
-                    let proof = self
-                        .request_header_range(header_range_request.0, header_range_request.1)
-                        .await;
-                    match proof {
-                        Ok(proof) => {
-                            self.relay_header_range(proof).await;
-                        }
-                        Err(e) => {
-                            error!("Header range proof generation failed: {}", e);
-                        }
-                    };
-                }
-
-                // Sleep for N minutes.
-                info!("Sleeping for {} minutes.", loop_delay_mins);
-                tokio::time::sleep(tokio::time::Duration::from_secs(60 * loop_delay_mins)).await;
             }
+
+            // Check if there is a header range request available.
+            let header_range_request = self.find_header_range(block_interval).await;
+
+            if let Some(header_range_request) = header_range_request {
+                // Request the header range proof to block_to_step_to.
+                println!("Trusted block: {}", header_range_request.0);
+                println!("Target block: {}", header_range_request.1);
+                let proof = self
+                    .request_header_range(header_range_request.0, header_range_request.1)
+                    .await;
+                match proof {
+                    Ok(proof) => {
+                        self.relay_header_range(proof).await;
+                    }
+                    Err(e) => {
+                        error!("Header range proof generation failed: {}", e);
+                    }
+                };
+            }
+
+            // Sleep for N minutes.
+            info!("Sleeping for {} minutes.", loop_delay_mins);
+            tokio::time::sleep(tokio::time::Duration::from_secs(60 * loop_delay_mins)).await;
         }
     }
 }
@@ -493,6 +492,6 @@ async fn main() {
     dotenv::dotenv().ok();
     env_logger::init();
 
-    let mut operator = VectorXOperator::new().await;
+    let operator = VectorXOperator::new().await;
     operator.run().await;
 }
