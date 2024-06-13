@@ -43,7 +43,7 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    let (report) = client.execute(ELF, stdin)?;
+    let (_, report) = client.execute(ELF, stdin)?;
 
     println!("Exeuction Report: {:?}", report);
 
