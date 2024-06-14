@@ -7,6 +7,7 @@ use sp1_vectorx_primitives::{
     compute_authority_set_commitment, consts::HASH_SIZE, verify_encoded_validators,
     verify_signature,
 };
+use sp_core::H256;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
@@ -20,7 +21,6 @@ use avail_subxt::config::substrate::DigestItem;
 use avail_subxt::primitives::Header;
 use avail_subxt::{api, RpcParams};
 use codec::{Compact, Decode, Encode};
-use ethers::types::H256;
 use futures::future::join_all;
 use sp_core::ed25519;
 use subxt::config::Header as SubxtHeader;

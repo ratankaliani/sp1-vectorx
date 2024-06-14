@@ -22,20 +22,11 @@ services = { path = "../services" }
 sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet", features = [
     "plonk",
 ] }
-ed25519-consensus = { version = "2", default-features = false }
-rand = "0.8"
 env_logger = { version = "0.9.0", default-features = false }
 hex = "0.4.3"
 itertools = "0.10.5"
-ff = { package = "ff_ce", version = "0.11", features = ["derive"] }
 log = { version = "0.4.14", default-features = false }
-num = { version = "0.4", features = ["rand"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1.0.86"
 tokio = { version = "1.2.0", features = ["full"] }
-reqwest = "0.11.20"
-sha256 = "1.4.0"
-primitive-types = "0.12.1"
 
 dotenv = "0.15.0"
 avail-subxt = { git = "https://github.com/availproject/avail.git", tag = "v2.2.2.0-rc1" }
@@ -49,18 +40,10 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 ] }
 alloy-primitives = { version = "0.7.5", features = ["serde"] }
 alloy-sol-types = "0.7.5"
-alloy-sol-macro = "0.7.5"
 anyhow = "1.0.68"
 clap = { version = "4.4.9", features = ["derive"] }
 futures = "0.3.30"
 async-trait = "0.1.77"
-ed25519-dalek = "2.1.1"
-rust-crypto = "0.2"
-redis = { version = "0.25.3", features = [
-    "tokio-native-tls-comp",
-    "json",
-    "tokio-comp",
-] }
 ethers = "2.0.14"
 
 aws-config = { version = "1.5.1", features = ["behavior-version-latest"] }
