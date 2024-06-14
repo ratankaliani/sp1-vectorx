@@ -126,7 +126,7 @@ async fn listen_for_justifications(fetcher: RpcDataFetcher) {
             }
         }
 
-        // Add justification to Redis.
+        // Add justification to DB.
         let store_justification_data = StoredJustificationData {
             block_number: header.number,
             signed_message: signed_message.clone(),
@@ -154,7 +154,6 @@ pub async fn main() {
 
     let fetcher = RpcDataFetcher {
         client: AvailClient::new(avail_url.clone()).await.unwrap(),
-        redis: services::redis::RedisClient::new(),
         aws: AWSClient::new().await,
         avail_chain_id,
     };

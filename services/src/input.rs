@@ -13,7 +13,6 @@ use std::env;
 use subxt::backend::rpc::RpcSubscription;
 
 use crate::aws::AWSClient;
-use crate::redis::RedisClient;
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 use alloy_primitives::{B256, B512};
 use avail_subxt::avail_client::AvailClient;
@@ -28,7 +27,6 @@ use subxt::config::Header as SubxtHeader;
 
 pub struct RpcDataFetcher {
     pub client: AvailClient,
-    pub redis: RedisClient,
     pub aws: AWSClient,
     pub avail_chain_id: String,
 }
@@ -40,11 +38,9 @@ impl RpcDataFetcher {
         let url = env::var("AVAIL_URL").expect("AVAIL_URL must be set");
         let avail_chain_id = env::var("AVAIL_CHAIN_ID").expect("AVAIL_CHAIN_ID must be set");
         let client = AvailClient::new(url.as_str()).await.unwrap();
-        let redis = RedisClient::new();
         let aws = AWSClient::new().await;
         RpcDataFetcher {
             client,
-            redis,
             aws,
             avail_chain_id,
         }
@@ -323,63 +319,63 @@ impl RpcDataFetcher {
         }
     }
 
-    /// Get the justification for a block using the Redis cache from the justification indexer.
+    /// Get the justification for a block using the DB cache from the justification indexer.
     /// TODO: Move justification indexer into this repo, for now, we need to convert it from the
     /// type stored by the VectorX repo.
     pub async fn get_justification_data_for_block(
         &self,
         block_number: u32,
     ) -> Option<(CircuitJustification, Header)> {
-        // Note: The redis justification type is from VectorX, and we need to map it onto the
+        // Note: The db justification type is from VectorX, and we need to map it onto the
         // CircuitJustification SP1 VectorX type.
-        let redis_justification = self
-            .redis
+        let stored_justification = self
+            .aws
             .get_justification(&self.avail_chain_id, block_number)
             .await;
 
-        if redis_justification.is_err() {
+        if stored_justification.is_err() {
             return None;
         }
 
-        let redis_justification = redis_justification.unwrap();
+        let stored_justification = stored_justification.unwrap();
 
-        let block_hash = self.get_block_hash(redis_justification.block_number).await;
+        let block_hash = self.get_block_hash(stored_justification.block_number).await;
 
         let authority_set_id = self
-            .get_authority_set_id(redis_justification.block_number - 1)
+            .get_authority_set_id(stored_justification.block_number - 1)
             .await;
         let authority_set_hash = self
-            .compute_authority_set_hash_for_block(redis_justification.block_number - 1)
+            .compute_authority_set_hash_for_block(stored_justification.block_number - 1)
             .await;
-        let header = self.get_header(redis_justification.block_number).await;
+        let header = self.get_header(stored_justification.block_number).await;
 
-        // Convert pubkeys from Redis into [u8; 32]
-        let pubkeys: Vec<B256> = redis_justification
+        // Convert pubkeys from DB into [u8; 32]
+        let pubkeys: Vec<B256> = stored_justification
             .pubkeys
             .iter()
             .map(|pubkey| B256::from_slice(pubkey.clone().as_slice()))
             .collect();
 
         let mut signatures: Vec<Option<B512>> = Vec::new();
-        for i in 0..redis_justification.signatures.len() {
-            if redis_justification.validator_signed[i] {
+        for i in 0..stored_justification.signatures.len() {
+            if stored_justification.validator_signed[i] {
                 signatures.push(Some(B512::from_slice(
-                    redis_justification.signatures[i].clone().as_slice(),
+                    stored_justification.signatures[i].clone().as_slice(),
                 )));
             } else {
                 signatures.push(None);
             }
         }
 
-        // Convert Redis stored justification into CircuitJustification.
+        // Convert DB stored justification into CircuitJustification.
         let circuit_justification = CircuitJustification {
-            signed_message: redis_justification.signed_message,
+            signed_message: stored_justification.signed_message,
             authority_set_id,
             current_authority_set_hash: authority_set_hash,
             pubkeys,
             signatures,
-            num_authorities: redis_justification.num_authorities,
-            block_number: redis_justification.block_number,
+            num_authorities: stored_justification.num_authorities,
+            block_number: stored_justification.block_number,
             block_hash,
         };
         Some((circuit_justification, header))

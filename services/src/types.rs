@@ -72,7 +72,7 @@ pub struct FinalityProof {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-/// Stored justification data in Redis.
+/// Stored justification data in DB.
 pub struct StoredJustificationData {
     pub block_number: u32,
     pub signed_message: Vec<u8>,
