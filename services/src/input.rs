@@ -351,8 +351,6 @@ impl RpcDataFetcher {
     }
 
     /// Get the justification for a block using the DB cache from the justification indexer.
-    /// TODO: Move justification indexer into this repo, for now, we need to convert it from the
-    /// type stored by the VectorX repo.
     pub async fn get_justification_data_for_block(
         &self,
         block_number: u32,
