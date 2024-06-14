@@ -1,8 +1,9 @@
 use aws_sdk_dynamodb::types::AttributeValue;
-use aws_sdk_dynamodb::{Client, Error};
+use aws_sdk_dynamodb::Client;
 
 use anyhow::Result;
 use log::info;
+use serde_json::{from_str, to_string};
 use std::collections::HashMap;
 
 use crate::types::StoredJustificationData;
@@ -24,19 +25,16 @@ impl AWSClient {
         &self,
         avail_chain_id: &str,
         justification: StoredJustificationData,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
+        let json_data = to_string(&justification)?;
+
         let block_nb = justification.block_number;
         let key = format!("{}-{}", avail_chain_id, block_nb).to_lowercase();
 
-        let mut item = serde_json::to_value(justification)
-            .unwrap()
-            .as_object()
-            .unwrap()
-            .iter()
-            .map(|(k, v)| (k.clone(), AttributeValue::S(v.to_string())))
-            .collect::<HashMap<_, _>>();
-
-        item.insert("id".to_string(), AttributeValue::S(key.to_string()));
+        let item = HashMap::from([
+            ("id".to_string(), AttributeValue::S(key.to_string())),
+            ("data".to_string(), AttributeValue::S(json_data.to_string())),
+        ]);
 
         info!("Adding justification for block number: {:?}", block_nb);
 
@@ -65,15 +63,13 @@ impl AWSClient {
             .await?;
 
         if let Some(item) = resp.item {
-            let justification_map = item
-                .into_iter()
-                .map(|(k, v)| (k, v.as_s().unwrap().to_string()))
-                .collect::<HashMap<_, _>>();
-            let justification: StoredJustificationData =
-                serde_json::from_value(serde_json::to_value(justification_map).unwrap()).unwrap();
-            Ok(justification)
-        } else {
-            Err(anyhow::anyhow!("Justification not found"))
+            if let Some(data_attr) = item.get("data") {
+                if let Ok(data_json) = data_attr.as_s() {
+                    let data: StoredJustificationData = from_str(data_json)?;
+                    return Ok(data);
+                }
+            }
         }
+        Err(anyhow::anyhow!("Justification not found"))
     }
 }

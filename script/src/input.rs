@@ -556,6 +556,14 @@ mod tests {
 
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
+    async fn test_get_justification_aws() {
+        let fetcher = RpcDataFetcher::new().await;
+
+        let _ = fetcher.aws.get_justification("turing", 334932).await;
+    }
+
+    #[tokio::test]
+    #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_new_authority_set() {
         dotenv::dotenv().ok();
         env_logger::init();

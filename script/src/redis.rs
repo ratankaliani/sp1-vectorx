@@ -6,6 +6,7 @@ use redis::JsonCommands;
 
 use crate::types::StoredJustificationData;
 
+// TODO: Remove this when we port it over.
 #[derive(Clone)]
 pub struct RedisClient {
     pub redis: redis::Client,
@@ -27,11 +28,7 @@ impl RedisClient {
     }
 
     /// Stores justification data in Redis. Errors if setting the key fails.
-    pub fn add_justification(
-        &self,
-        avail_chain_id: &str,
-        justification: StoredJustificationData,
-    ) {
+    pub fn add_justification(&self, avail_chain_id: &str, justification: StoredJustificationData) {
         let mut con = self.redis.get_connection().unwrap();
 
         let justification_key = format!(
@@ -63,8 +60,7 @@ impl RedisClient {
         // Result is always stored as serialized bytes: https://github.com/redis-rs/redis-rs#json-support.
         let serialized_justification: Vec<u8> = con.json_get(key, "$").expect("Failed to get key");
 
-        match serde_json::from_slice::<Vec<StoredJustificationData>>(&serialized_justification)
-        {
+        match serde_json::from_slice::<Vec<StoredJustificationData>>(&serialized_justification) {
             Ok(justification) => Ok(justification[0].clone()),
             Err(e) => Err(anyhow::anyhow!(
                 "Failed to deserialize justification: {}",
