@@ -21,6 +21,7 @@ impl AWSClient {
         AWSClient { client }
     }
 
+    /// Add a justification to the AWS DynamoDB table.
     pub async fn add_justification(
         &self,
         avail_chain_id: &str,
@@ -47,6 +48,7 @@ impl AWSClient {
         Ok(())
     }
 
+    /// Get a justification from the AWS DynamoDB table.
     pub async fn get_justification(
         &self,
         avail_chain_id: &str,
