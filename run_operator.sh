@@ -8,4 +8,4 @@ if [ -f "script/.env" ]; then
     cp script/.env ./etc/secrets/.env || exit 1
 fi
 
-docker run -d --name sp1-vectorx-operator sp1-vectorx-operator
+docker run -d --name turing-sepolia-operator sp1-vectorx-operator
