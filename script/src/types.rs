@@ -74,7 +74,7 @@ pub struct FinalityProof {
 #[derive(Serialize, Deserialize, Clone)]
 /// Stored justification data in Redis.
 /// TODO: Refactor the data stored in Redis and move it out of the VectorX repo into this repo.
-pub struct RedisStoredJustificationData {
+pub struct StoredJustificationData {
     pub block_number: u32,
     pub signed_message: Vec<u8>,
     pub pubkeys: Vec<Vec<u8>>,

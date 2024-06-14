@@ -12,6 +12,7 @@ use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
 
+use crate::aws::AWSClient;
 use crate::redis::RedisClient;
 use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 use alloy_primitives::{B256, B512};
@@ -28,6 +29,7 @@ use subxt::config::Header as SubxtHeader;
 pub struct RpcDataFetcher {
     pub client: AvailClient,
     pub redis: RedisClient,
+    pub aws: AWSClient,
     pub avail_chain_id: String,
 }
 
@@ -39,9 +41,11 @@ impl RpcDataFetcher {
         let avail_chain_id = env::var("AVAIL_CHAIN_ID").expect("AVAIL_CHAIN_ID must be set");
         let client = AvailClient::new(url.as_str()).await.unwrap();
         let redis = RedisClient::new();
+        let aws = AWSClient::new().await;
         RpcDataFetcher {
             client,
             redis,
+            aws,
             avail_chain_id,
         }
     }

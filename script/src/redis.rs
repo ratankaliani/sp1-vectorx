@@ -4,7 +4,7 @@ use anyhow::Result;
 use log::debug;
 use redis::JsonCommands;
 
-use crate::types::RedisStoredJustificationData;
+use crate::types::StoredJustificationData;
 
 #[derive(Clone)]
 pub struct RedisClient {
@@ -30,7 +30,7 @@ impl RedisClient {
     pub fn add_justification(
         &self,
         avail_chain_id: &str,
-        justification: RedisStoredJustificationData,
+        justification: StoredJustificationData,
     ) {
         let mut con = self.redis.get_connection().unwrap();
 
@@ -55,7 +55,7 @@ impl RedisClient {
         &self,
         avail_chain_id: &str,
         block_number: u32,
-    ) -> Result<RedisStoredJustificationData> {
+    ) -> Result<StoredJustificationData> {
         let mut con = self.redis.get_connection().unwrap();
 
         let key = format!("{}:justification:{}", avail_chain_id, block_number).to_lowercase();
@@ -63,7 +63,7 @@ impl RedisClient {
         // Result is always stored as serialized bytes: https://github.com/redis-rs/redis-rs#json-support.
         let serialized_justification: Vec<u8> = con.json_get(key, "$").expect("Failed to get key");
 
-        match serde_json::from_slice::<Vec<RedisStoredJustificationData>>(&serialized_justification)
+        match serde_json::from_slice::<Vec<StoredJustificationData>>(&serialized_justification)
         {
             Ok(justification) => Ok(justification[0].clone()),
             Err(e) => Err(anyhow::anyhow!(

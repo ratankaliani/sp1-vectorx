@@ -1,19 +1,18 @@
 use std::collections::HashMap;
 use std::env;
 
-use alloy_primitives::B512;
 use avail_subxt::config::Header as HeaderTrait;
 use avail_subxt::{api, AvailClient, RpcParams};
 use codec::Encode;
 use log::debug;
-use sp1_vectorx_primitives::types::CircuitJustification;
+use sp1_vectorx_script::aws::AWSClient;
 use sp1_vectorx_script::input::RpcDataFetcher;
-use sp1_vectorx_script::types::{GrandpaJustification, SignerMessage};
+use sp1_vectorx_script::types::{GrandpaJustification, SignerMessage, StoredJustificationData};
 use sp_core::ed25519::{self};
 use sp_core::{blake2_256, Pair, H256};
 use subxt::backend::rpc::RpcSubscription;
 
-async fn listen_for_justifications(mut fetcher: RpcDataFetcher) {
+async fn listen_for_justifications(fetcher: RpcDataFetcher) {
     let sub: Result<RpcSubscription<GrandpaJustification>, _> = fetcher
         .client
         .rpc()
@@ -114,43 +113,38 @@ async fn listen_for_justifications(mut fetcher: RpcDataFetcher) {
         // Create justification data.
         let mut justification_pubkeys = Vec::new();
         let mut justification_signatures = Vec::new();
+        let mut validator_signed = Vec::new();
         for authority_pubkey in authorities.iter() {
-            if let Some(signature) = pubkey_to_signature.get(&authority_pubkey.0.to_vec()) {
-                justification_pubkeys.push(*authority_pubkey);
-                let sig = B512::from_slice(&signature);
-                justification_signatures.push(Some(sig));
+            if let Some(signature) = pubkey_to_signature.get(authority_pubkey.0.as_slice()) {
+                justification_pubkeys.push(authority_pubkey.0.to_vec());
+                justification_signatures.push(signature.to_vec());
+                validator_signed.push(true);
             } else {
-                justification_pubkeys.push(*authority_pubkey);
-                justification_signatures.push(None);
+                justification_pubkeys.push(authority_pubkey.0.to_vec());
+                justification_signatures.push([0u8; 64].to_vec());
+                validator_signed.push(false);
             }
         }
 
-        // Get the authority set that attested to block_number.
-        let (authority_set_id, authority_set_hash) = fetcher
-            .get_authority_set_data_for_block(header.number - 1)
-            .await;
-
         // Add justification to Redis.
-        let store_justification_data = CircuitJustification {
+        let store_justification_data = StoredJustificationData {
             block_number: header.number,
             signed_message: signed_message.clone(),
             pubkeys: justification_pubkeys,
             signatures: justification_signatures,
             num_authorities: authorities.len(),
-            authority_set_id,
-            current_authority_set_hash: authority_set_hash,
-            block_hash: block_hash.0.into(),
+            validator_signed,
         };
         fetcher
-            .redis
+            .aws
             .add_justification(&fetcher.avail_chain_id, store_justification_data)
-            .await;
+            .await
+            .unwrap();
     }
 }
 
 #[tokio::main]
 pub async fn main() {
-    env::set_var("RUST_LOG", "debug");
     dotenv::dotenv().ok();
     env_logger::init();
 
@@ -160,7 +154,8 @@ pub async fn main() {
 
     let fetcher = RpcDataFetcher {
         client: AvailClient::new(avail_url.clone()).await.unwrap(),
-        redis: vectorx::input::RedisClient::new().await,
+        redis: sp1_vectorx_script::redis::RedisClient::new(),
+        aws: AWSClient::new().await,
         avail_chain_id,
     };
 
