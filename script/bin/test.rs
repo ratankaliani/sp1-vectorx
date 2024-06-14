@@ -1,8 +1,8 @@
 //! A simple script to test the generation of proofs.
 
+use services::input::RpcDataFetcher;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
 use sp1_vectorx_primitives::types::ProofType;
-use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 #[tokio::main]

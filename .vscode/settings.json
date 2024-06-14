@@ -4,9 +4,9 @@
         "editor.defaultFormatter": "rust-lang.rust-analyzer",
         "editor.formatOnSave": true,
         "editor.hover.enabled": true
-    },  
+    },
     "[solidity]": {
-        "editor.defaultFormatter": "JuanBlanco.solidity" 
+        "editor.defaultFormatter": "JuanBlanco.solidity"
     },
     "solidity.formatter": "forge",
     "editor.rulers": [
@@ -26,7 +26,8 @@
     "rust-analyzer.linkedProjects": [
         "primitives/Cargo.toml",
         "program/Cargo.toml",
-        "script/Cargo.toml"
+        "script/Cargo.toml",
+        "services/Cargo.toml"
     ],
     "rust-analyzer.showUnlinkedFileNotification": false,
 }

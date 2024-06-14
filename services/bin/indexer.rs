@@ -5,9 +5,9 @@ use avail_subxt::config::Header as HeaderTrait;
 use avail_subxt::{api, AvailClient, RpcParams};
 use codec::Encode;
 use log::debug;
-use sp1_vectorx_script::aws::AWSClient;
-use sp1_vectorx_script::input::RpcDataFetcher;
-use sp1_vectorx_script::types::{GrandpaJustification, SignerMessage, StoredJustificationData};
+use services::aws::AWSClient;
+use services::input::RpcDataFetcher;
+use services::types::{GrandpaJustification, SignerMessage, StoredJustificationData};
 use sp_core::ed25519::{self};
 use sp_core::{blake2_256, Pair, H256};
 use subxt::backend::rpc::RpcSubscription;
@@ -154,7 +154,7 @@ pub async fn main() {
 
     let fetcher = RpcDataFetcher {
         client: AvailClient::new(avail_url.clone()).await.unwrap(),
-        redis: sp1_vectorx_script::redis::RedisClient::new(),
+        redis: services::redis::RedisClient::new(),
         aws: AWSClient::new().await,
         avail_chain_id,
     };

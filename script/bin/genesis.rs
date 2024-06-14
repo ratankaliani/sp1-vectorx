@@ -8,8 +8,8 @@
 //!
 use avail_subxt::config::Header;
 use clap::Parser;
+use services::input::RpcDataFetcher;
 use sp1_sdk::{HashableKey, ProverClient};
-use sp1_vectorx_script::input::RpcDataFetcher;
 const VECTORX_ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 #[derive(Parser, Debug, Clone)]

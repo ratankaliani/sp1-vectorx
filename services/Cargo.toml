@@ -1,27 +1,15 @@
 [workspace]
 [package]
 version = "0.1.0"
-name = "sp1-vectorx-script"
+name = "services"
 edition = "2021"
 
 [[bin]]
-name = "operator"
-path = "bin/operator.rs"
-
-[[bin]]
-name = "genesis"
-path = "bin/genesis.rs"
-
-[[bin]]
-name = "test"
-path = "bin/test.rs"
+name = "indexer"
+path = "bin/indexer.rs"
 
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
-services = { path = "../services" }
-sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet", features = [
-    "plonk",
-] }
 ed25519-consensus = { version = "2", default-features = false }
 rand = "0.8"
 env_logger = { version = "0.9.0", default-features = false }
@@ -65,9 +53,6 @@ ethers = "2.0.14"
 
 aws-config = { version = "1.5.1", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = "1.34.0"
-
-[build-dependencies]
-sp1-helper = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet" }
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]

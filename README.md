@@ -8,6 +8,7 @@ Implementation of [Vector X](https://github.com/succinctlabs/vectorx) in Rust fo
 - `/primitives`: Libraries for types and helper functions used in the program.
 - `/script`: Scripts for getting the contract's genesis parameters and deploying the operator to 
     update the light client.
+- `/services`: RPC fetcher for the `script` + the justification indexer.
 - `/contracts`: The contract's source code and deployment scripts. Backwards-compatible with the
     original VectorX implementation in case we need to upgrade.
 - `/query`: Contains the logic for querying data root proofs from the contracts.

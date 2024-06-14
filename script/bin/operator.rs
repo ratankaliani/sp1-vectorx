@@ -5,10 +5,10 @@ use alloy_primitives::{B256, U256};
 use alloy_sol_types::{sol, SolCall, SolType, SolValue};
 use anyhow::Result;
 use log::{error, info};
+use services::input::RpcDataFetcher;
 use sp1_sdk::{ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin};
 use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 use sp1_vectorx_script::contract::ContractClient;
-use sp1_vectorx_script::input::RpcDataFetcher;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 sol! {
