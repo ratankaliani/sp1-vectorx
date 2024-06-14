@@ -25,7 +25,8 @@ impl AWSClient {
         avail_chain_id: &str,
         justification: StoredJustificationData,
     ) -> Result<(), Error> {
-        let key = format!("{}-{}", avail_chain_id, justification.block_number).to_lowercase();
+        let block_nb = justification.block_number;
+        let key = format!("{}-{}", avail_chain_id, block_nb).to_lowercase();
 
         let mut item = serde_json::to_value(justification)
             .unwrap()
@@ -37,10 +38,7 @@ impl AWSClient {
 
         item.insert("id".to_string(), AttributeValue::S(key.to_string()));
 
-        info!(
-            "Adding justification for block number: {}",
-            justification.block_number
-        );
+        info!("Adding justification for block number: {:?}", block_nb);
 
         self.client
             .put_item()
