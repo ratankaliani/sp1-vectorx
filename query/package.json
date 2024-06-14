@@ -10,7 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@upstash/redis": "^1.31.5",
+    "@aws-sdk/client-dynamodb": "^3.596.0",
     "abitype": "^1.0.2",
     "avail-js-sdk": "^0.2.12",
     "next": "14.2.3",

@@ -1,8 +1,7 @@
 use std::collections::HashMap;
-use std::env;
 
 use avail_subxt::config::Header as HeaderTrait;
-use avail_subxt::{api, AvailClient, RpcParams};
+use avail_subxt::{api, RpcParams};
 use codec::Encode;
 use log::debug;
 use services::aws::AWSClient;
@@ -12,7 +11,7 @@ use sp_core::ed25519::{self};
 use sp_core::{blake2_256, Pair, H256};
 use subxt::backend::rpc::RpcSubscription;
 
-async fn listen_for_justifications(fetcher: RpcDataFetcher) {
+async fn listen_for_justifications(fetcher: RpcDataFetcher, aws_client: AWSClient) {
     let sub: Result<RpcSubscription<GrandpaJustification>, _> = fetcher
         .client
         .rpc()
@@ -135,8 +134,8 @@ async fn listen_for_justifications(fetcher: RpcDataFetcher) {
             num_authorities: authorities.len(),
             validator_signed,
         };
-        fetcher
-            .aws
+
+        aws_client
             .add_justification(&fetcher.avail_chain_id, store_justification_data)
             .await
             .unwrap();
@@ -148,15 +147,8 @@ pub async fn main() {
     dotenv::dotenv().ok();
     env_logger::init();
 
-    // Get the chain from the environment.
-    let avail_url = env::var("AVAIL_URL").unwrap();
-    let avail_chain_id = env::var("AVAIL_CHAIN_ID").unwrap();
+    let fetcher = RpcDataFetcher::new().await;
+    let aws_client = AWSClient::new().await;
 
-    let fetcher = RpcDataFetcher {
-        client: AvailClient::new(avail_url.clone()).await.unwrap(),
-        aws: AWSClient::new().await,
-        avail_chain_id,
-    };
-
-    listen_for_justifications(fetcher).await;
+    listen_for_justifications(fetcher, aws_client).await;
 }

@@ -13,8 +13,10 @@ use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
 
-use crate::aws::AWSClient;
-use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
+use crate::types::{
+    EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage,
+    StoredJustificationData,
+};
 use alloy_primitives::{B256, B512};
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
@@ -27,8 +29,8 @@ use subxt::config::Header as SubxtHeader;
 
 pub struct RpcDataFetcher {
     pub client: AvailClient,
-    pub aws: AWSClient,
     pub avail_chain_id: String,
+    pub vectorx_query_url: String,
 }
 
 impl RpcDataFetcher {
@@ -38,12 +40,41 @@ impl RpcDataFetcher {
         let url = env::var("AVAIL_URL").expect("AVAIL_URL must be set");
         let avail_chain_id = env::var("AVAIL_CHAIN_ID").expect("AVAIL_CHAIN_ID must be set");
         let client = AvailClient::new(url.as_str()).await.unwrap();
-        let aws = AWSClient::new().await;
+        let vectorx_query_url =
+            env::var("VECTORX_QUERY_URL").expect("VECTORX_QUERY_URL must be set");
         RpcDataFetcher {
             client,
-            aws,
             avail_chain_id,
+            vectorx_query_url,
         }
+    }
+
+    /// Gets a justification from the vectorx-query service.
+    pub async fn get_justification(
+        &self,
+        avail_chain_id: &str,
+        block_number: u32,
+    ) -> Result<StoredJustificationData> {
+        let base_justification_query_url = format!("{}/api/justification", self.vectorx_query_url);
+
+        let request_url = format!(
+            "{}?availChainId={}&blockNumber={}",
+            base_justification_query_url, avail_chain_id, block_number
+        );
+
+        let response = reqwest::get(request_url).await?;
+        let json_response = response.json::<serde_json::Value>().await?;
+        let justification_str = json_response
+            .get("justification")
+            .ok_or_else(|| anyhow::anyhow!("Justification field missing"))?
+            .get("S")
+            .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))?
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))?;
+        let justification_data =
+            serde_json::from_str::<StoredJustificationData>(justification_str)?;
+
+        Ok(justification_data)
     }
 
     pub async fn get_header_range_inputs(
@@ -329,7 +360,6 @@ impl RpcDataFetcher {
         // Note: The db justification type is from VectorX, and we need to map it onto the
         // CircuitJustification SP1 VectorX type.
         let stored_justification = self
-            .aws
             .get_justification(&self.avail_chain_id, block_number)
             .await;
 
@@ -552,14 +582,6 @@ mod tests {
 
     #[tokio::test]
     #[cfg_attr(feature = "ci", ignore)]
-    async fn test_get_justification_aws() {
-        let fetcher = RpcDataFetcher::new().await;
-
-        let _ = fetcher.aws.get_justification("turing", 334932).await;
-    }
-
-    #[tokio::test]
-    #[cfg_attr(feature = "ci", ignore)]
     async fn test_get_new_authority_set() {
         dotenv::dotenv().ok();
         env_logger::init();
@@ -645,5 +667,16 @@ mod tests {
         let (_, block_number, _, _) = decode_precommit(signed_message.clone());
 
         println!("block number {:?}", block_number);
+    }
+
+    use crate::input::RpcDataFetcher;
+    use anyhow::Result;
+
+    #[tokio::test]
+    async fn test_get_justification_query_service() -> Result<()> {
+        let client = RpcDataFetcher::new().await;
+        let justification = client.get_justification("turing", 337281).await?;
+        println!("Justification: {:?}", justification);
+        Ok(())
     }
 }

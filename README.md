@@ -41,7 +41,7 @@ source .env
 forge script script/VectorX.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --etherscan-api-key $ETHERSCAN_API_KEY --broadcast --verify
 ```
 
-Update `.env` following `.env.example`.
+Update `script/.env` following `script/.env.example`.
 
 Run `VectorX` script to update the LC continuously.
 

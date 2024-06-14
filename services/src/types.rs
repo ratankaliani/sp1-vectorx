@@ -71,7 +71,7 @@ pub struct FinalityProof {
     pub unknown_headers: Vec<Header>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 /// Stored justification data in DB.
 pub struct StoredJustificationData {
     pub block_number: u32,

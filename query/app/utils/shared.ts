@@ -1,5 +1,3 @@
-import { Redis } from '@upstash/redis';
-import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http } from 'viem';
 import { mainnet, goerli, gnosis, sepolia, holesky, arbitrumSepolia, arbitrum, scrollSepolia, optimism, optimismGoerli, base, baseSepolia } from 'viem/chains';
 import { AbiEvent } from 'abitype';
