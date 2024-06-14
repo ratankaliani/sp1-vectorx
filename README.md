@@ -57,14 +57,12 @@ cargo run --bin operator --release
 docker run -d --name <NAME> sp1-vectorx-operator
 ```
 
-## Query Data Root Proofs
-
-See [Query.md](./Query.md)
+## [Query Data Root Proofs](./query/README.md)
 
 ## Cycle Count
 
 Header Range
-- Primarily dominated by Blake2B hashing of the headers in the header range commitment tree.
+- Dominated by Blake2B hashing of the headers in the header range commitment tree.
 
 Rotate
 - ~8M cycles.

@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Query Service
 
-## Getting Started
+Whenever a new data root commitment is stored on-chain, the merkle proofs need to be made available for end-users to prove the data root's of blocks within those data commitments. This service listens for data root commitment events on-chain and stores the merkle proofs for each data root in the range, which is then exposed via a separate endpoint.
 
-First, run the development server:
+The indexed contracts are configured in [deployments.json](./query/app/utils/deployments.json).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## RPC Queries
+
+### Query for `dataRoot` Proof Data
+
+Querying with a block number.
+
+```
+https://vectorx-query.succinct.xyz/api?chainName=hex&contractChainId=11155111&contractAddress=0xbc281367e1F2dB1c3e92255AA2F040B1c642ec75&blockNumber=247230
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Example response:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```json
+{
+  "data": {
+    "blockNumber": 247230,
+    "rangeHash": "0xafad54e98bdaebacc1f220dd919dda48b84ed0689906c288a4d93dae1ae9d7c5",
+    ...
+  }
+}
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+Querying with a block hash.
 
-## Learn More
+```
+https://vectorx-query.succinct.xyz/api?chainName=hex&contractChainId=11155111&contractAddress=0xbc281367e1F2dB1c3e92255AA2F040B1c642ec75&blockHash=0xad664ed32323c70e9c19333f6d7d6f855719f439bc0cb4cd92d89138c252d560
+```
 
-To learn more about Next.js, take a look at the following resources:
+Example response:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```json
+{
+  "data": {
+    "rangeHash": "0xafad54e98bdaebacc1f220dd919dda48b84ed0689906c288a4d93dae1ae9d7c5",
+    "dataCommitment": "0x7b0f5743191b390b3ba21cdda41b3940b37566a9f336b9e37cf0ad94c937242a",
+    ...
+  }
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### Health of the `VectorX` contract
 
-## Deploy on Vercel
+Querying for the health of the VectorX contract deployed on Sepolia (chain ID: 11155111) at address 0xbc281367e1F2dB1c3e92255AA2F040B1c642ec75.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+https://vectorx-query.succinct.xyz/api/health?chainName=hex&contractChainId=11155111&contractAddress=0xbc281367e1F2dB1c3e92255AA2F040B1c642ec75
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+Example response:
+
+```json
+{"data":{"logEmitted":true,"ethBlocksSinceLastLog":35,"lastLogTimestamp":1717707768,"blocksBehindHead":50}}
+```
+
+Note: If `logEmitted` is false, the contract has not emitted a log in at least the last `ethBlocksSinceLastLog` blocks.
+
+## Launch the Query Service
+
+Update [query/.env](./query/.env) with the corresponding variables from [.env.example](./.env.example). Then launch the service with:
+
+```
+npm run dev
+```
