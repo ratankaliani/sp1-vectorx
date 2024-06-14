@@ -30,7 +30,6 @@ WORKDIR /app
 COPY script/ /app/script/
 COPY program/ /app/program/
 COPY primitives/ /app/primitives/
-COPY .env /app/
 
 # Run the VectorX operator from script directory
-CMD ["sh", "-c", "cd script && RUST_LOG=info cargo run --bin operator --release"]
+CMD ["sh", "-c", "cd script && cp /etc/secrets/.env /etc/secrets/* . && RUST_LOG=info cargo run --bin operator --release"]

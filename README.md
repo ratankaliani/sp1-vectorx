@@ -53,8 +53,13 @@ cargo run --bin operator --release
 
 ### Run with Docker
 
+Build the Docker container.
+```sh
+docker build -t sp1-vectorx-operator -f Dockerfile.operator .
 ```
-docker run -d --name <NAME> sp1-vectorx-operator
+
+```sh
+bash run_operator.sh
 ```
 
 ## [Query Data Root Proofs](./query/README.md)

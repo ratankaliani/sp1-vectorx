@@ -27,3 +27,5 @@ pgo-data.profdata
 
 # IntelliJ IDEA
 .idea
+
+/etc/secrets
