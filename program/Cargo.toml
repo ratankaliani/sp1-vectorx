@@ -6,7 +6,7 @@ edition = "2021"
 
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
-sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet" }
+sp1-zkvm = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.7-testnet" }
 ed25519-consensus = { version = "2.1", default-features = false }
 blake2 = "0.10.6"
 sha2 = "0.10.8"
