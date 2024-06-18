@@ -1,0 +1,30 @@
+services:
+  - type: worker
+    runtime: rust
+    name: sp1-vectorx-test-deploy
+    repo: https://github.com/succinctlabs/sp1-vectorx
+    region: oregon
+    plan: pro plus
+    rootDir: script
+    buildCommand: rm -rf build.rs && cargo build --bin operator --release
+    startCommand: cargo run --bin operator --release
+    autoDeploy: false
+    envVars:
+      - key: AVAIL_URL
+        value: wss://turing-rpc.avail.so/ws
+      - key: AVAIL_CHAIN_ID
+        value: turing
+      - key: SP1_PROVER
+        value: network
+      - key: VECTORX_QUERY_URL
+        value: https://vectorx-query.succinct.xyz
+      - key: CHAIN_ID
+        value: 11155111
+      - key: CONTRACT_ADDRESS
+        value: 0x6Ba1b2c8750837087e47d4bbA824043A15DEE543
+      - key: PRIVATE_KEY
+        sync: false
+      - key: RPC_URL
+        sync: false
+      - key: SP1_PRIVATE_KEY
+        sync: false
