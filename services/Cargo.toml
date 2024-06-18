@@ -1,4 +1,3 @@
-[workspace]
 [package]
 version = "0.1.0"
 name = "services"
@@ -37,8 +36,8 @@ aws-config = { version = "1.5.1", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = "1.34.0"
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
-[patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# [patch.crates-io]
+# sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }

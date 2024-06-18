@@ -1,37 +1,27 @@
-FROM golang:1.22 AS go-builder
-
-FROM debian:bookworm-slim AS rust-builder
-
-# Dependencies
-RUN apt update && apt install -y clang curl libssl-dev git pkg-config dialog
-
-# Install Rust
-RUN apt-get update && \
-    apt-get install -y curl build-essential && \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-# Set the environment variable for Rust
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install Go 1.22
-COPY --from=go-builder /usr/local/go /usr/local/go
-ENV PATH="/usr/local/go/bin:$PATH"
-
-# Install the Succinct toolchain
-RUN curl -L https://sp1.succinct.xyz | bash && ~/.sp1/bin/sp1up
-# Check cargo prove is installed
-ENV PATH="/root/.sp1/bin:$PATH"
-RUN cargo --version && cargo prove --version
-
-# Set the working directory
+FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
 WORKDIR /app
 
-# Copy only the script, program, and primitives directories
+FROM chef AS planner
+COPY Cargo.toml /app/Cargo.toml
 COPY script/ /app/script/
-COPY program/ /app/program/
 COPY primitives/ /app/primitives/
 COPY services/ /app/services/
 COPY /etc/secrets/.env /app/.env
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Run the VectorX operator from script directory
-CMD ["sh", "-c", "cd script && RUST_LOG=info cargo run --bin operator --release"]
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - caching Docker layer
+RUN cargo chef cook --release --recipe-path recipe.json
+# Build application
+COPY Cargo.toml /app/Cargo.toml
+COPY script/ /app/script/
+COPY primitives/ /app/primitives/
+COPY services/ /app/services/
+COPY /etc/secrets/.env /app/.env
+RUN cargo build --release --bin operator
+
+FROM debian:bookworm-slim AS runtime
+WORKDIR /app
+COPY --from=builder /app/target/release/operator /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/operator"]

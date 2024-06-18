@@ -1,4 +1,3 @@
-[workspace]
 [package]
 version = "0.1.0"
 name = "sp1-vectorx-script"
@@ -19,9 +18,7 @@ path = "bin/test.rs"
 [dependencies]
 sp1-vectorx-primitives = { path = "../primitives" }
 services = { path = "../services" }
-sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet", features = [
-    "plonk",
-] }
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.7-testnet" }
 env_logger = { version = "0.9.0", default-features = false }
 hex = "0.4.3"
 itertools = "0.10.5"
@@ -50,11 +47,11 @@ aws-config = { version = "1.5.1", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = "1.34.0"
 
 [build-dependencies]
-sp1-helper = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.5-testnet" }
+sp1-helper = { git = "https://github.com/succinctlabs/sp1.git", tag = "v1.0.7-testnet" }
 
-# Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
-[patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
+# [patch.crates-io]
+# sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
+# sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-5" }
