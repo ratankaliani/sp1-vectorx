@@ -1,17 +1,30 @@
-use std::cmp::min;
 use std::env;
+use std::time::Duration;
+use std::{cmp::min, sync::Arc};
 
-use alloy_primitives::{B256, U256};
-use alloy_sol_types::{sol, SolCall, SolType, SolValue};
+use alloy::{
+    network::{Ethereum, EthereumWallet},
+    primitives::{Address, B256},
+    providers::{
+        fillers::{ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller, WalletFiller},
+        Identity, Provider, ProviderBuilder, RootProvider,
+    },
+    signers::local::PrivateKeySigner,
+    sol,
+    transports::http::{Client, Http},
+};
+
 use anyhow::Result;
 use log::{error, info};
 use services::input::RpcDataFetcher;
 use sp1_sdk::{ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin};
-use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
-use sp1_vectorx_script::contract::ContractClient;
+use sp1_vectorx_primitives::types::ProofType;
+use sp1_vectorx_script::relay;
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 sol! {
+    #[allow(missing_docs)]
+    #[sol(rpc)]
     contract VectorX {
         bool public frozen;
         uint32 public latestBlock;
@@ -26,10 +39,24 @@ sol! {
     }
 }
 
+/// Alias the fill provider for the Ethereum network. Retrieved from the instantiation
+/// of the ProviderBuilder. Recommended method for passing around a ProviderBuilder.
+type EthereumFillProvider = FillProvider<
+    JoinFill<
+        JoinFill<JoinFill<JoinFill<Identity, GasFiller>, NonceFiller>, ChainIdFiller>,
+        WalletFiller<EthereumWallet>,
+    >,
+    RootProvider<Http<Client>>,
+    Http<Client>,
+    Ethereum,
+>;
+
 struct VectorXOperator {
-    contract: ContractClient,
+    wallet_filler: Arc<EthereumFillProvider>,
     client: ProverClient,
     pk: SP1ProvingKey,
+    address: Address,
+    chain_id: u64,
 }
 
 #[derive(Debug)]
@@ -50,14 +77,35 @@ impl VectorXOperator {
     async fn new() -> Self {
         dotenv::dotenv().ok();
 
-        let contract = ContractClient::default();
         let client = ProverClient::new();
         let (pk, _) = client.setup(ELF);
+        let chain_id: u64 = env::var("CHAIN_ID")
+            .expect("CHAIN_ID not set")
+            .parse()
+            .unwrap();
+        let rpc_url = env::var("RPC_URL")
+            .expect("RPC_URL not set")
+            .parse()
+            .unwrap();
+
+        let private_key = env::var("PRIVATE_KEY").expect("PRIVATE_KEY not set");
+        let contract_address = env::var("CONTRACT_ADDRESS")
+            .expect("CONTRACT_ADDRESS not set")
+            .parse()
+            .unwrap();
+        let signer: PrivateKeySigner = private_key.parse().expect("Failed to parse private key");
+        let wallet = EthereumWallet::from(signer);
+        let provider = ProviderBuilder::new()
+            .with_recommended_fillers()
+            .wallet(wallet)
+            .on_http(rpc_url);
 
         Self {
-            contract,
             client,
             pk,
+            wallet_filler: Arc::new(provider),
+            chain_id,
+            address: contract_address,
         }
     }
 
@@ -186,54 +234,19 @@ impl VectorXOperator {
         None
     }
 
-    fn log_proof_outputs(&self, proof: &mut SP1PlonkBn254Proof) {
-        // Read output values.
-        let mut output_bytes = [0u8; 544];
-        proof.public_values.read_slice(&mut output_bytes);
-        let outputs: (u8, alloy_primitives::Bytes, alloy_primitives::Bytes) =
-            ProofOutput::abi_decode(&output_bytes, true).unwrap();
-
-        // Log proof outputs.
-        let proof_type = ProofType::from_uint(outputs.0).unwrap();
-        match proof_type {
-            ProofType::HeaderRangeProof => {
-                let header_range_outputs =
-                    HeaderRangeOutputs::abi_decode(&outputs.1, true).unwrap();
-                println!("Generated Proof Type: Header Range Proof");
-                println!("Header Range Outputs: {:?}", header_range_outputs);
-            }
-            ProofType::RotateProof => {
-                let rotate_outputs = RotateOutputs::abi_decode(&outputs.2, true).unwrap();
-                println!("Generated Proof Type: Rotate Proof");
-                println!("Rotate Outputs: {:?}", rotate_outputs)
-            }
-        }
-    }
-
     // Current block, step_range_max and whether next authority set hash exists.
     async fn get_contract_data_for_header_range(&self) -> HeaderRangeContractData {
         let fetcher = RpcDataFetcher::new().await;
 
-        let vectorx_latest_block_call_data = VectorX::latestBlockCall {}.abi_encode();
-        let vectorx_latest_block = self
-            .contract
-            .read(vectorx_latest_block_call_data)
-            .await
-            .unwrap();
-        let vectorx_latest_block = U256::abi_decode(&vectorx_latest_block, true).unwrap();
-        let vectorx_latest_block: u32 = vectorx_latest_block.try_into().unwrap();
+        let contract = VectorX::new(self.address, self.wallet_filler.clone());
 
-        let header_range_commitment_tree_size_call_data =
-            VectorX::headerRangeCommitmentTreeSizeCall {}.abi_encode();
-        let header_range_commitment_tree_size = self
-            .contract
-            .read(header_range_commitment_tree_size_call_data)
+        let vectorx_latest_block = contract.latestBlock().call().await.unwrap().latestBlock;
+        let header_range_commitment_tree_size = contract
+            .headerRangeCommitmentTreeSize()
+            .call()
             .await
-            .unwrap();
-        let header_range_commitment_tree_size =
-            U256::abi_decode(&header_range_commitment_tree_size, true).unwrap();
-        let header_range_commitment_tree_size: u32 =
-            header_range_commitment_tree_size.try_into().unwrap();
+            .unwrap()
+            .headerRangeCommitmentTreeSize;
 
         let avail_current_block = fetcher.get_head().await.number;
 
@@ -241,16 +254,12 @@ impl VectorXOperator {
             fetcher.get_authority_set_id(vectorx_latest_block - 1).await;
         let next_authority_set_id = vectorx_current_authority_set_id + 1;
 
-        let next_authority_set_hash_call_data = VectorX::authoritySetIdToHashCall {
-            _0: next_authority_set_id,
-        }
-        .abi_encode();
-        let next_authority_set_hash = self
-            .contract
-            .read(next_authority_set_hash_call_data)
+        let next_authority_set_hash = contract
+            .authoritySetIdToHash(next_authority_set_id)
+            .call()
             .await
-            .unwrap();
-        let next_authority_set_hash = B256::abi_decode(&next_authority_set_hash, true).unwrap();
+            .unwrap()
+            ._0;
 
         HeaderRangeContractData {
             vectorx_latest_block,
@@ -262,38 +271,32 @@ impl VectorXOperator {
 
     // Current block and whether next authority set hash exists.
     async fn get_contract_data_for_rotate(&self) -> RotateContractData {
+        let contract = VectorX::new(self.address, self.wallet_filler.clone());
+
         // Fetch the current block from the contract
-        let current_block_call_data = VectorX::latestBlockCall {}.abi_encode();
-        let current_block = self.contract.read(current_block_call_data).await.unwrap();
-        let current_block = U256::abi_decode(&current_block, true).unwrap();
-        let current_block: u32 = current_block.try_into().unwrap();
+        let vectorx_latest_block = contract.latestBlock().call().await.unwrap().latestBlock;
 
         // Fetch the current authority set id from the contract
-        let current_authority_set_id_call_data = VectorX::latestAuthoritySetIdCall {}.abi_encode();
-        let current_authority_set_id = self
-            .contract
-            .read(current_authority_set_id_call_data)
+        let vectorx_latest_authority_set_id = contract
+            .latestAuthoritySetId()
+            .call()
             .await
-            .unwrap();
-        let current_authority_set_id = U256::abi_decode(&current_authority_set_id, true).unwrap();
-        let current_authority_set_id: u64 = current_authority_set_id.try_into().unwrap();
+            .unwrap()
+            .latestAuthoritySetId;
 
         // Check if the next authority set id exists in the contract
-        let next_authority_set_id_call_data = VectorX::authoritySetIdToHashCall {
-            _0: current_authority_set_id + 1,
-        }
-        .abi_encode();
-        let next_authority_set_hash = self
-            .contract
-            .read(next_authority_set_id_call_data)
+        let next_authority_set_id = vectorx_latest_authority_set_id + 1;
+        let next_authority_set_hash = contract
+            .authoritySetIdToHash(next_authority_set_id)
+            .call()
             .await
-            .unwrap();
-        let next_authority_set_hash = B256::abi_decode(&next_authority_set_hash, true).unwrap();
+            .unwrap()
+            ._0;
         let next_authority_set_hash_exists = next_authority_set_hash != B256::ZERO;
 
         // Return the fetched data
         RotateContractData {
-            current_block,
+            current_block: vectorx_latest_block,
             next_authority_set_hash_exists,
         }
     }
@@ -370,47 +373,71 @@ impl VectorXOperator {
     }
 
     /// Relay a header range proof to the SP1 VectorX contract.
-    async fn relay_header_range(&self, mut proof: SP1PlonkBn254Proof) {
-        self.log_proof_outputs(&mut proof);
+    async fn relay_header_range(&self, proof: SP1PlonkBn254Proof) {
+        let contract = VectorX::new(self.address, self.wallet_filler.clone());
 
         let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
-        let verify_vectorx_proof_call_data = VectorX::commitHeaderRangeCall {
-            publicValues: proof.public_values.to_vec().into(),
-            proof: proof_as_bytes.into(),
-        }
-        .abi_encode();
 
-        let receipt = self
-            .contract
-            .send(verify_vectorx_proof_call_data)
+        let gas_limit = relay::get_gas_limit(self.chain_id);
+        let max_fee_per_gas = relay::get_fee_cap(self.chain_id, self.wallet_filler.root()).await;
+
+        // Wait for 3 required confirmations with a timeout of 60 seconds.
+        const NUM_CONFIRMATIONS: u64 = 3;
+        const TIMEOUT_SECONDS: u64 = 60;
+
+        let receipt = contract
+            .commitHeaderRange(proof_as_bytes.into(), proof.public_values.to_vec().into())
+            .gas_price(max_fee_per_gas)
+            .gas(gas_limit)
+            .send()
             .await
-            .expect("Failed to post/verify header range proof onchain.");
+            .unwrap()
+            .with_required_confirmations(NUM_CONFIRMATIONS)
+            .with_timeout(Some(Duration::from_secs(TIMEOUT_SECONDS)))
+            .get_receipt()
+            .await
+            .unwrap();
 
-        if let Some(receipt) = receipt {
-            println!("Transaction hash: {:?}", receipt.transaction_hash);
+        // If status is false, it reverted.
+        if !receipt.status() {
+            error!("Transaction reverted!");
         }
+
+        println!("Transaction hash: {:?}", receipt.transaction_hash);
     }
 
     /// Relay a rotate proof to the SP1 VectorX contract.
-    async fn relay_rotate(&self, mut proof: SP1PlonkBn254Proof) {
-        self.log_proof_outputs(&mut proof);
+    async fn relay_rotate(&self, proof: SP1PlonkBn254Proof) {
+        let contract = VectorX::new(self.address, self.wallet_filler.clone());
 
         let proof_as_bytes = hex::decode(&proof.proof.encoded_proof).unwrap();
-        let verify_vectorx_proof_call_data = VectorX::rotateCall {
-            publicValues: proof.public_values.to_vec().into(),
-            proof: proof_as_bytes.into(),
-        }
-        .abi_encode();
 
-        let receipt = self
-            .contract
-            .send(verify_vectorx_proof_call_data)
+        let gas_limit = relay::get_gas_limit(self.chain_id);
+        let max_fee_per_gas = relay::get_fee_cap(self.chain_id, self.wallet_filler.root()).await;
+
+        // Wait for 3 required confirmations with a timeout of 60 seconds.
+        const NUM_CONFIRMATIONS: u64 = 3;
+        const TIMEOUT_SECONDS: u64 = 60;
+
+        let receipt = contract
+            .rotate(proof_as_bytes.into(), proof.public_values.to_vec().into())
+            .gas_price(max_fee_per_gas)
+            .gas(gas_limit)
+            .send()
             .await
-            .expect("Failed to post/verify rotate proof onchain.");
+            .unwrap()
+            .with_required_confirmations(NUM_CONFIRMATIONS)
+            .with_timeout(Some(Duration::from_secs(TIMEOUT_SECONDS)))
+            .get_receipt()
+            .await
+            .unwrap();
 
-        if let Some(receipt) = receipt {
-            println!("Transaction hash: {:?}", receipt.transaction_hash);
+        // If status is false, it reverted.
+        if !receipt.status() {
+            error!("Transaction reverted!");
         }
+
+        println!("Transaction hash: {:?}", receipt.transaction_hash);
     }
 
     async fn run(&self) {

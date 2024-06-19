@@ -1,4 +1,4 @@
-pub mod contract;
+pub mod relay;
 
 #[cfg(test)]
 mod tests {

@@ -122,6 +122,11 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         verifier = ISP1Verifier(_verifier);
     }
 
+    /// @notice Update the VectorX program verification key.
+    function updateVectorXProgramVkey(bytes32 _vectorXProgramVkey) external onlyGuardian {
+        vectorXProgramVkey = _vectorXProgramVkey;
+    }
+
     /// @notice Update the freeze parameter.
     function updateFreeze(bool _freeze) external onlyGuardian {
         frozen = _freeze;
