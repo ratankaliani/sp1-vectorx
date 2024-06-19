@@ -117,6 +117,11 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         __TimelockedUpgradeable_init(_params.guardian, _params.guardian);
     }
 
+    /// @notice Update the SP1 verifier.
+    function updateVerifier(address _verifier) external onlyGuardian {
+        verifier = ISP1Verifier(_verifier);
+    }
+
     /// @notice Update the freeze parameter.
     function updateFreeze(bool _freeze) external onlyGuardian {
         frozen = _freeze;
