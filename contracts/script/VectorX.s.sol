@@ -5,6 +5,7 @@ import "forge-std/console.sol";
 import {Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
+import {MockSP1Verifier} from "@sp1-contracts/MockSP1Verifier.sol";
 import {VectorX} from "../src/VectorX.sol";
 import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -28,9 +29,9 @@ contract VectorXScript is Script {
         bytes32 vectorXProgramVkey = bytes32(vm.envBytes32("VECTORX_PROGRAM_VKEY"));
 
         // TODO: Detect SP1_PROVER=mock and use a mock verifier if specified.
-        SP1Verifier verifier = new SP1Verifier();
-
-        VectorX vectorxImpl = new VectorX();
+        // if (vm.envString()) {
+        //     VectorX vectorxImpl = new MockSP1Verifier();
+        // }
         vectorx = VectorX(address(new ERC1967Proxy(address(vectorxImpl), "")));
         vectorx.initialize(
             VectorX.InitParameters({
