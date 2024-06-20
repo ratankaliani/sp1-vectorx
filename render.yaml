@@ -3,7 +3,7 @@ services:
     runtime: rust
     name: sp1-vectorx-operator
     repo: https://github.com/succinctlabs/sp1-vectorx
-    region: oregon
+    region: frankfurt
     plan: pro
     rootDir: script
     buildCommand: rm -rf build.rs && cargo build --bin operator --release
@@ -21,7 +21,7 @@ services:
       - key: CHAIN_ID
         value: 11155111
       - key: CONTRACT_ADDRESS
-        value: 0x6Ba1b2c8750837087e47d4bbA824043A15DEE543
+        value: 0x04819f50EE813a8f6F6ba28288551c4339fDC881
       - key: PRIVATE_KEY
         sync: false
       - key: RPC_URL
