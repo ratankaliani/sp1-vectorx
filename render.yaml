@@ -28,3 +28,32 @@ services:
         sync: false
       - key: SP1_PRIVATE_KEY
         sync: false
+  - type: worker
+    runtime: rust
+    name: sp1-vectorx-operator-hex
+    repo: https://github.com/succinctlabs/sp1-vectorx
+    region: frankfurt
+    plan: pro
+    rootDir: script
+    buildCommand: rm -rf build.rs && cargo build --bin operator --release
+    startCommand: cargo run --bin operator --release
+    autoDeploy: true
+    envVars:
+      - key: AVAIL_URL
+        value: wss://rpc-hex-devnet.avail.tools/ws
+      - key: AVAIL_CHAIN_ID
+        value: hex
+      - key: SP1_PROVER
+        value: mock
+      - key: VECTORX_QUERY_URL
+        value: https://vectorx-query.succinct.xyz
+      - key: CHAIN_ID
+        value: 11155111
+      - key: CONTRACT_ADDRESS
+        value: 0x92d1BF24FC9f7234f47A82C04f6CE49282846165
+      - key: PRIVATE_KEY
+        sync: false
+      - key: RPC_URL
+        sync: false
+      - key: SP1_PRIVATE_KEY
+        sync: false

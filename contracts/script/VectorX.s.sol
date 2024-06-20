@@ -2,10 +2,13 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/console.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {StdAssertions} from "forge-std/StdAssertions.sol";
 import {Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
-import {MockSP1Verifier} from "@sp1-contracts/MockSP1Verifier.sol";
+import {SP1MockVerifier} from "@sp1-contracts/SP1MockVerifier.sol";
+import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {VectorX} from "../src/VectorX.sol";
 import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -13,6 +16,7 @@ contract VectorXScript is Script {
     using stdJson for string;
 
     VectorX public vectorx;
+    ISP1Verifier public verifier;
 
     function setUp() public {}
 
@@ -29,9 +33,13 @@ contract VectorXScript is Script {
         bytes32 vectorXProgramVkey = bytes32(vm.envBytes32("VECTORX_PROGRAM_VKEY"));
 
         // TODO: Detect SP1_PROVER=mock and use a mock verifier if specified.
-        // if (vm.envString()) {
-        //     VectorX vectorxImpl = new MockSP1Verifier();
-        // }
+        VectorX vectorxImpl = new VectorX();
+        string memory mockStr = "mock";
+        if (keccak256(abi.encodePacked(vm.envString("SP1_PROVER"))) == keccak256(abi.encodePacked(mockStr))) {
+            verifier = ISP1Verifier(address(new SP1MockVerifier()));
+        } else {
+            verifier = ISP1Verifier(address(new SP1Verifier()));
+        }
         vectorx = VectorX(address(new ERC1967Proxy(address(vectorxImpl), "")));
         vectorx.initialize(
             VectorX.InitParameters({
