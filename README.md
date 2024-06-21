@@ -1,4 +1,4 @@
-# SP1 Vector X
+# SP1 Vector
 
 ## Overview
 
