@@ -5,12 +5,12 @@ import {IVectorX} from "./interfaces/IVectorX.sol";
 import {TimelockedUpgradeable} from "@succinctx/upgrades/TimelockedUpgradeable.sol";
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 
-/// @notice VectorX is a light client for Avail's consensus.
+/// @notice SP1Vector is a light client for Avail's consensus.
 /// @dev The light client tracks both the state of Avail's Grandpa consensus and Vector, Avail's
 ///     data commitment solution.
 /// @dev Ensure that all new storage variables are placed after existing storage variables to avoid
 /// storage corruption during upgrades.
-contract VectorX is IVectorX, TimelockedUpgradeable {
+contract SP1Vector is IVectorX, TimelockedUpgradeable {
     /// @notice Indicator of if the contract is frozen.
     bool public frozen;
 
@@ -53,7 +53,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
     /// @notice The commitment tree size for the header range.
     uint32 public headerRangeCommitmentTreeSize;
 
-    /// @notice The verification key for the VectorX program.
+    /// @notice The verification key for the SP1Vector program.
     bytes32 public vectorXProgramVkey;
 
     /// @notice The deployed SP1 verifier contract.
@@ -122,7 +122,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
         verifier = ISP1Verifier(_verifier);
     }
 
-    /// @notice Update the VectorX program verification key.
+    /// @notice Update the SP1Vector program verification key.
     function updateVectorXProgramVkey(bytes32 _vectorXProgramVkey) external onlyGuardian {
         vectorXProgramVkey = _vectorXProgramVkey;
     }
@@ -202,7 +202,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        // SP1 VectorX proofs have the same format, ProofOutputs, regardless of the proof type.
+        // SP1 SP1Vector proofs have the same format, ProofOutputs, regardless of the proof type.
         ProofOutputs memory proofOutputs = abi.decode(publicValues, (ProofOutputs));
 
         // Assert this is a header range proof. This is a sanity check to prevent accidental submission
@@ -287,7 +287,7 @@ contract VectorX is IVectorX, TimelockedUpgradeable {
             revert ContractFrozen();
         }
 
-        // SP1 VectorX proofs have the same format, ProofOutputs, regardless of the proof type.
+        // SP1 SP1Vector proofs have the same format, ProofOutputs, regardless of the proof type.
         ProofOutputs memory proofOutputs = abi.decode(publicValues, (ProofOutputs));
 
         // Assert this is a rotate proof.

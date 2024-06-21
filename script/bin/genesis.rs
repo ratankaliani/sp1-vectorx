@@ -19,6 +19,8 @@ pub struct GenesisArgs {
     pub block: Option<u32>,
 }
 
+const HEADER_RANGE_COMMITMENT_TREE_SIZE: u32 = 1024;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let fetcher = RpcDataFetcher::new().await;
@@ -54,10 +56,10 @@ async fn main() -> anyhow::Result<()> {
         genesis_authority_set_id: authority_set_id,
         genesis_authority_set_hash: format!("{:#x}", authority_set_hash),
         vectorx_program_vkey: vk.bytes32(),
-        header_range_commitment_tree_size: 512,
+        header_range_commitment_tree_size: HEADER_RANGE_COMMITMENT_TREE_SIZE,
     };
 
-    println!("GENESIS_HEIGHT={}\nGENESIS_HEADER={}\nGENESIS_AUTHORITY_SET_ID={}\nGENESIS_AUTHORITY_SET_HASH={}\nVECTORX_PROGRAM_VKEY={}\nHEADER_RANGE_COMMITMENT_TREE_SIZE={}",
+    println!("GENESIS_HEIGHT={}\nGENESIS_HEADER={}\nGENESIS_AUTHORITY_SET_ID={}\nGENESIS_AUTHORITY_SET_HASH={}\nSP1_VECTOR_PROGRAM_VKEY={}\nHEADER_RANGE_COMMITMENT_TREE_SIZE={}",
              output.genesis_height,
              output.genesis_header,
              output.genesis_authority_set_id,

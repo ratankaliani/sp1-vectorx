@@ -9,13 +9,13 @@ import {stdJson} from "forge-std/StdJson.sol";
 import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
 import {SP1MockVerifier} from "@sp1-contracts/SP1MockVerifier.sol";
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
-import {VectorX} from "../src/VectorX.sol";
+import {SP1Vector} from "../src/SP1Vector.sol";
 import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 
-contract VectorXScript is Script {
+contract DeployScript is Script {
     using stdJson for string;
 
-    VectorX public vectorx;
+    SP1Vector public sp1Vector;
     ISP1Verifier public verifier;
 
     function setUp() public {}
@@ -30,19 +30,19 @@ contract VectorXScript is Script {
         uint64 authoritySetId = uint64(vm.envUint("GENESIS_AUTHORITY_SET_ID"));
         bytes32 authoritySetHash = bytes32(vm.envBytes32("GENESIS_AUTHORITY_SET_HASH"));
         uint32 headerRangeCommitmentTreeSize = uint32(vm.envUint("HEADER_RANGE_COMMITMENT_TREE_SIZE"));
-        bytes32 vectorXProgramVkey = bytes32(vm.envBytes32("VECTORX_PROGRAM_VKEY"));
+        bytes32 vectorXProgramVkey = bytes32(vm.envBytes32("SP1_VECTOR_PROGRAM_VKEY"));
 
         // TODO: Detect SP1_PROVER=mock and use a mock verifier if specified.
-        VectorX vectorxImpl = new VectorX();
+        SP1Vector sp1VectorImpl = new SP1Vector();
         string memory mockStr = "mock";
         if (keccak256(abi.encodePacked(vm.envString("SP1_PROVER"))) == keccak256(abi.encodePacked(mockStr))) {
             verifier = ISP1Verifier(address(new SP1MockVerifier()));
         } else {
             verifier = ISP1Verifier(address(new SP1Verifier()));
         }
-        vectorx = VectorX(address(new ERC1967Proxy(address(vectorxImpl), "")));
-        vectorx.initialize(
-            VectorX.InitParameters({
+        sp1Vector = SP1Vector(address(new ERC1967Proxy(address(sp1VectorImpl), "")));
+        sp1Vector.initialize(
+            SP1Vector.InitParameters({
                 guardian: guardian,
                 height: height,
                 header: header,
