@@ -101,5 +101,6 @@ the `SP1Vector` contract.
 ```
 cd ../script
 
-AVAIL_URL=wss://turing-rpc.avail.so/ws AVAIL_CHAIN_ID=turing CHAIN_ID=11155111 RPC_URL=https://ethereum-sepolia.publicnode.com/ CONTRACT_ADDRESS=<SP1_Vector_ADDRESS> cargo run --bin operator --release
+AVAIL_URL=wss://turing-rpc.avail.so/ws AVAIL_CHAIN_ID=turing CHAIN_ID=11155111 RPC_URL=https://ethereum-sepolia.publicnode.com/ CONTRACT_ADDRESS=<SP1_Vector_ADDRESS> VECTORX_QUERY_URL=https://vectorx-query.succinct.xyz
+ cargo run --bin operator --release
 ```
