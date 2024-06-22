@@ -2,7 +2,7 @@
 
 use services::input::RpcDataFetcher;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::ProofType;
+use sp1_vectorx_primitives::{rotate::verify_rotate, types::ProofType};
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 #[tokio::main]
@@ -10,14 +10,13 @@ async fn main() -> anyhow::Result<()> {
     setup_logger();
 
     // Supply an initial authority set id, trusted block, and target block.
-    let authority_set_id = 74u64;
+    let authority_set_id = 64u64;
     let trusted_block = 272355;
     let target_block = 272534;
 
-    let proof_type = ProofType::HeaderRangeProof;
+    let proof_type = ProofType::RotateProof;
 
     let fetcher = RpcDataFetcher::new().await;
-    let client = ProverClient::new();
     let mut stdin: SP1Stdin = SP1Stdin::new();
 
     // Fetch & write inputs to proof based on the proof type.
@@ -42,6 +41,8 @@ async fn main() -> anyhow::Result<()> {
             stdin.write(&rotate_input);
         }
     }
+
+    let client = ProverClient::new();
 
     let (_, report) = client.execute(ELF, stdin)?;
 

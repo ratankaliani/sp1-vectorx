@@ -344,7 +344,7 @@ impl VectorXOperator {
         // deeply wrong with the justification indexer.
         loop {
             if block_to_step_to > vectorx_current_block + header_range_commitment_tree_size {
-                info!(
+                error!(
                     "Unable to find any valid justifications after searching from block {} to block {}. This is likely caused by an issue with the justification indexer.",
                     vectorx_current_block + ideal_block_interval,
                     vectorx_current_block + header_range_commitment_tree_size
@@ -360,7 +360,6 @@ impl VectorXOperator {
                 break;
             }
             block_to_step_to += 1;
-            println!("Block to step to: {:?}", block_to_step_to);
         }
 
         Some(block_to_step_to)

@@ -45,7 +45,7 @@ impl ProofType {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct RotateInputs {
     pub current_authority_set_id: u64,
     pub current_authority_set_hash: B256,
@@ -55,7 +55,7 @@ pub struct RotateInputs {
     pub header_rotate_data: HeaderRotateData,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 /// Data for the next set of authorities.
 pub struct HeaderRotateData {
     /// Encoded header bytes for the epoch end block.
@@ -67,7 +67,7 @@ pub struct HeaderRotateData {
     pub consensus_log_position: usize,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 /// Justification data for an authority set.
 pub struct CircuitJustification {
     pub authority_set_id: u64,

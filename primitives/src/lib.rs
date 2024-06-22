@@ -43,7 +43,7 @@ pub fn verify_simple_justification(
 
     // 3. Check that the signed message is signed by the correct authority.
     // Must have at least 2/3 of the signatures to verify the justification.
-    let threshold = (justification.pubkeys.len() * 2).div_ceil(3);
+    let threshold = ((justification.pubkeys.len() * 2) + 1).div_ceil(3);
     let mut verified_signatures = 0;
 
     for i in 0..justification.pubkeys.len() {
@@ -57,14 +57,14 @@ pub fn verify_simple_justification(
             verified_signatures += 1;
 
             // Exit the loop early if more than 2/3 of signatures are verified.
-            if verified_signatures > threshold {
+            if verified_signatures >= threshold {
                 break;
             }
         }
     }
 
     assert!(
-        verified_signatures > threshold,
+        verified_signatures >= threshold,
         "Less than 2/3 of signatures are verified"
     );
 }
