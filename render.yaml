@@ -4,7 +4,7 @@ services:
     name: sp1-vectorx-operator-eu
     repo: https://github.com/succinctlabs/sp1-vectorx
     region: frankfurt
-    plan: pro
+    plan: standard
     rootDir: script
     buildCommand: rm -rf build.rs && cargo build --bin operator --release
     startCommand: cargo run --bin operator --release
@@ -33,7 +33,7 @@ services:
     name: sp1-vectorx-operator-hex
     repo: https://github.com/succinctlabs/sp1-vectorx
     region: frankfurt
-    plan: pro
+    plan: standard
     rootDir: script
     buildCommand: rm -rf build.rs && cargo build --bin operator --release
     startCommand: cargo run --bin operator --release
