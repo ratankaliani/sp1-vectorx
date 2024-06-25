@@ -13,10 +13,7 @@ use std::collections::HashMap;
 use std::env;
 use subxt::backend::rpc::RpcSubscription;
 
-use crate::types::{
-    EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage,
-    StoredJustificationData,
-};
+use crate::types::{EncodedFinalityProof, FinalityProof, GrandpaJustification, SignerMessage};
 use alloy_primitives::{B256, B512};
 use avail_subxt::avail_client::AvailClient;
 use avail_subxt::config::substrate::DigestItem;
@@ -49,12 +46,12 @@ impl RpcDataFetcher {
         }
     }
 
-    /// Gets a justification from the vectorx-query service.
+    /// Gets a justification from the vectorx-query service, which reads the data from the AWS DB.
     pub async fn get_justification(
         &self,
         avail_chain_id: &str,
         block_number: u32,
-    ) -> Result<StoredJustificationData> {
+    ) -> Result<GrandpaJustification> {
         let base_justification_query_url = format!("{}/api/justification", self.vectorx_query_url);
 
         let request_url = format!(
@@ -71,8 +68,7 @@ impl RpcDataFetcher {
             .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))?
             .as_str()
             .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))?;
-        let justification_data =
-            serde_json::from_str::<StoredJustificationData>(justification_str)?;
+        let justification_data = serde_json::from_str::<GrandpaJustification>(justification_str)?;
 
         Ok(justification_data)
     }
@@ -357,55 +353,21 @@ impl RpcDataFetcher {
     ) -> Option<(CircuitJustification, Header)> {
         // Note: The db justification type is from VectorX, and we need to map it onto the
         // CircuitJustification SP1 VectorX type.
-        let stored_justification = self
+        let grandpa_justification = self
             .get_justification(&self.avail_chain_id, block_number)
             .await;
 
-        if stored_justification.is_err() {
+        if grandpa_justification.is_err() {
             return None;
         }
+        let grandpa_justification = grandpa_justification.unwrap();
 
-        let stored_justification = stored_justification.unwrap();
-
-        let block_hash = self.get_block_hash(stored_justification.block_number).await;
-
-        let authority_set_id = self
-            .get_authority_set_id(stored_justification.block_number - 1)
-            .await;
-        let authority_set_hash = self
-            .compute_authority_set_hash_for_block(stored_justification.block_number - 1)
-            .await;
-        let header = self.get_header(stored_justification.block_number).await;
-
-        // Convert pubkeys from DB into [u8; 32]
-        let pubkeys: Vec<B256> = stored_justification
-            .pubkeys
-            .iter()
-            .map(|pubkey| B256::from_slice(pubkey.clone().as_slice()))
-            .collect();
-
-        let mut signatures: Vec<Option<B512>> = Vec::new();
-        for i in 0..stored_justification.signatures.len() {
-            if stored_justification.validator_signed[i] {
-                signatures.push(Some(B512::from_slice(
-                    stored_justification.signatures[i].clone().as_slice(),
-                )));
-            } else {
-                signatures.push(None);
-            }
-        }
+        let header = self.get_header(block_number).await;
 
         // Convert DB stored justification into CircuitJustification.
-        let circuit_justification = CircuitJustification {
-            signed_message: stored_justification.signed_message,
-            authority_set_id,
-            current_authority_set_hash: authority_set_hash,
-            pubkeys,
-            signatures,
-            num_authorities: stored_justification.num_authorities,
-            block_number: stored_justification.block_number,
-            block_hash,
-        };
+        let circuit_justification = self
+            .compute_data_from_justification(grandpa_justification, block_number)
+            .await;
         Some((circuit_justification, header))
     }
 
