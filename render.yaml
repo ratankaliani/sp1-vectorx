@@ -2,7 +2,7 @@ services:
   - type: worker
     runtime: rust
     name: sp1-vectorx-operator-eu
-    repo: https://github.com/succinctlabs/sp1-vectorx
+    repo: https://github.com/succinctlabs/sp1-vector
     region: frankfurt
     plan: standard
     rootDir: script
@@ -31,7 +31,7 @@ services:
   - type: worker
     runtime: rust
     name: sp1-vectorx-operator-hex
-    repo: https://github.com/succinctlabs/sp1-vectorx
+    repo: https://github.com/succinctlabs/sp1-vector
     region: frankfurt
     plan: standard
     rootDir: script
@@ -64,7 +64,7 @@ services:
   - type: worker
     runtime: rust
     name: indexer-hex
-    repo: https://github.com/succinctlabs/sp1-vectorx
+    repo: https://github.com/succinctlabs/sp1-vector
     region: frankfurt
     plan: standard
     rootDir: services
@@ -87,7 +87,7 @@ services:
   - type: worker
     runtime: rust
     name: indexer-turing
-    repo: https://github.com/succinctlabs/sp1-vectorx
+    repo: https://github.com/succinctlabs/sp1-vector
     region: frankfurt
     plan: standard
     rootDir: services
