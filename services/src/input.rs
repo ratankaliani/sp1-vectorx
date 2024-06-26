@@ -24,10 +24,12 @@ use futures::future::join_all;
 use sp_core::ed25519;
 use subxt::config::Header as SubxtHeader;
 
+/// An RPC data fetcher for fetching data for VectorX. The vectorx_query_url is only necessary when
+/// querying justifications.
 pub struct RpcDataFetcher {
     pub client: AvailClient,
     pub avail_chain_id: String,
-    pub vectorx_query_url: String,
+    pub vectorx_query_url: Option<String>,
 }
 
 impl RpcDataFetcher {
@@ -35,10 +37,9 @@ impl RpcDataFetcher {
         dotenv::dotenv().ok();
 
         let url = env::var("AVAIL_URL").expect("AVAIL_URL must be set");
-        let avail_chain_id = env::var("AVAIL_CHAIN_ID").expect("AVAIL_CHAIN_ID must be set");
         let client = AvailClient::new(url.as_str()).await.unwrap();
-        let vectorx_query_url =
-            env::var("VECTORX_QUERY_URL").expect("VECTORX_QUERY_URL must be set");
+        let avail_chain_id = env::var("AVAIL_CHAIN_ID").expect("AVAIL_CHAIN_ID must be set");
+        let vectorx_query_url = env::var("VECTORX_QUERY_URL").ok();
         RpcDataFetcher {
             client,
             avail_chain_id,
@@ -47,16 +48,19 @@ impl RpcDataFetcher {
     }
 
     /// Gets a justification from the vectorx-query service, which reads the data from the AWS DB.
-    pub async fn get_justification(
-        &self,
-        avail_chain_id: &str,
-        block_number: u32,
-    ) -> Result<GrandpaJustification> {
-        let base_justification_query_url = format!("{}/api/justification", self.vectorx_query_url);
+    pub async fn get_justification(&self, block_number: u32) -> Result<GrandpaJustification> {
+        if self.vectorx_query_url.is_none() {
+            return Err(anyhow::anyhow!("VECTORX_QUERY_URL must be set"));
+        }
+
+        let base_justification_query_url = format!(
+            "{}/api/justification",
+            self.vectorx_query_url.as_ref().unwrap()
+        );
 
         let request_url = format!(
             "{}?availChainId={}&blockNumber={}",
-            base_justification_query_url, avail_chain_id, block_number
+            base_justification_query_url, self.avail_chain_id, block_number
         );
 
         let response = reqwest::get(request_url).await?;
@@ -353,9 +357,7 @@ impl RpcDataFetcher {
     ) -> Option<(CircuitJustification, Header)> {
         // Note: The db justification type is from VectorX, and we need to map it onto the
         // CircuitJustification SP1 VectorX type.
-        let grandpa_justification = self
-            .get_justification(&self.avail_chain_id, block_number)
-            .await;
+        let grandpa_justification = self.get_justification(block_number).await;
 
         if grandpa_justification.is_err() {
             return None;
