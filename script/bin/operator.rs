@@ -340,8 +340,6 @@ impl VectorXOperator {
         let mut block_to_step_to =
             max_valid_block_to_step_to - (max_valid_block_to_step_to % ideal_block_interval);
 
-        info!("block_to_step_to: {}", block_to_step_to);
-        info!("current block: {}", vectorx_current_block);
         // If block_to_step_to is <= to the current block, return None.
         if block_to_step_to <= vectorx_current_block {
             return None;
@@ -351,7 +349,6 @@ impl VectorXOperator {
         // to find a valid justification. If we're unable to find a justification, something has gone
         // deeply wrong with the justification indexer.
         loop {
-            info!("In loop! block_to_step_to: {}", block_to_step_to);
             if block_to_step_to > vectorx_current_block + header_range_commitment_tree_size {
                 error!(
                     "Unable to find any valid justifications after searching from block {} to block {}. This is likely caused by an issue with the justification indexer.",
