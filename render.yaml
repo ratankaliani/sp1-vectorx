@@ -22,6 +22,8 @@ services:
         value: 11155111
       - key: CONTRACT_ADDRESS
         value: 0x04819f50EE813a8f6F6ba28288551c4339fDC881
+      - key: RUST_LOG
+        value: info
       - key: PRIVATE_KEY
         sync: false
       - key: RPC_URL
@@ -55,6 +57,8 @@ services:
         value: 30
       - key: LOOP_DELAY_MINS
         value: 5
+      - key: RUST_LOG
+        value: info
       - key: PRIVATE_KEY
         sync: false
       - key: RPC_URL
@@ -76,6 +80,8 @@ services:
         value: wss://rpc-hex-devnet.avail.tools/ws
       - key: AVAIL_CHAIN_ID
         value: hex
+      - key: RUST_LOG
+        value: info
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_REGION
@@ -99,6 +105,8 @@ services:
         value: wss://turing-rpc.avail.so/ws
       - key: AVAIL_CHAIN_ID
         value: turing
+      - key: RUST_LOG
+        value: info
       - key: AWS_ACCESS_KEY_ID
         sync: false
       - key: AWS_REGION
