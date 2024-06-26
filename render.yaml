@@ -55,7 +55,7 @@ services:
         value: 0xEA5b658054Cc3646044770d60cfC4e17c5cA1c7d
       - key: BLOCK_UPDATE_INTERVAL
         value: 30
-      - key: LOOP_DELAY_MINS
+      - key: LOOP_INTERVAL_MINS
         value: 5
       - key: RUST_LOG
         value: info

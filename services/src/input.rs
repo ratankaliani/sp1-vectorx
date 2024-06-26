@@ -65,14 +65,19 @@ impl RpcDataFetcher {
 
         let response = reqwest::get(request_url).await?;
         let json_response = response.json::<serde_json::Value>().await?;
+
         let justification_str = json_response
             .get("justification")
-            .ok_or_else(|| anyhow::anyhow!("Justification field missing"))?
+            .ok_or_else(|| anyhow::anyhow!("Justification field missing"))
+            .expect("Justification field should be present")
             .get("S")
-            .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))?
+            .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))
+            .expect("Justification field should be a string")
             .as_str()
-            .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))?;
-        let justification_data = serde_json::from_str::<GrandpaJustification>(justification_str)?;
+            .ok_or_else(|| anyhow::anyhow!("Justification field should be a string"))
+            .expect("Justification field should be a string");
+        let justification_data: GrandpaJustification =
+            serde_json::from_str(justification_str).expect("Couldn't deserialize!");
 
         Ok(justification_data)
     }
