@@ -15,7 +15,6 @@ import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
 contract DeployScript is Script {
     using stdJson for string;
 
-    SP1Vector public sp1Vector;
     ISP1Verifier public verifier;
 
     function setUp() public {}
