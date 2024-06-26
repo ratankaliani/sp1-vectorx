@@ -144,6 +144,11 @@ impl VectorXOperator {
         stdin.write(&header_range_inputs);
         stdin.write(&target_justification);
 
+        info!(
+            "Requesting header range proof from block {} to block {}.",
+            trusted_block, target_block
+        );
+
         self.client.prove_plonk(&self.pk, stdin)
     }
 
@@ -157,6 +162,11 @@ impl VectorXOperator {
 
         stdin.write(&proof_type);
         stdin.write(&rotate_input);
+
+        info!(
+            "Requesting rotate proof to add authority set {}.",
+            current_authority_set_id + 1
+        );
 
         self.client.prove_plonk(&self.pk, stdin)
     }
@@ -178,11 +188,6 @@ impl VectorXOperator {
         if current_authority_set_id < head_authority_set_id
             && !rotate_contract_data.next_authority_set_hash_exists
         {
-            info!(
-                "Requesting rotate to next authority set id, which is {:?}.",
-                current_authority_set_id + 1
-            );
-
             return Ok(Some(current_authority_set_id));
         }
         Ok(None)
@@ -314,8 +319,6 @@ impl VectorXOperator {
         let fetcher = RpcDataFetcher::new().await;
         let last_justified_block = fetcher.last_justified_block(authority_set_id).await;
 
-        println!("Last justified block: {:?}", last_justified_block);
-
         // Step to the last justified block of the current epoch if it is in range. When the last
         // justified block is 0, the VectorX contract's latest epoch is the current epoch on the
         // Avail chain.
@@ -369,7 +372,7 @@ impl VectorXOperator {
     }
 
     /// Relay a header range proof to the SP1 VectorX contract.
-    async fn relay_header_range(&self, proof: SP1PlonkBn254Proof) -> Result<()> {
+    async fn relay_header_range(&self, proof: SP1PlonkBn254Proof) -> Result<B256> {
         let contract = VectorX::new(self.contract_address, self.wallet_filler.clone());
 
         let proof_as_bytes = hex::decode(&proof.proof.encoded_proof)?;
@@ -400,16 +403,14 @@ impl VectorXOperator {
 
         // If status is false, it reverted.
         if !receipt.status() {
-            error!("Transaction reverted!");
+            return Err(anyhow::anyhow!("Transaction reverted!"));
         }
 
-        println!("Transaction hash: {:?}", receipt.transaction_hash);
-
-        Ok(())
+        Ok(receipt.transaction_hash)
     }
 
     /// Relay a rotate proof to the SP1 VectorX contract.
-    async fn relay_rotate(&self, proof: SP1PlonkBn254Proof) -> Result<()> {
+    async fn relay_rotate(&self, proof: SP1PlonkBn254Proof) -> Result<B256> {
         let contract = VectorX::new(self.contract_address, self.wallet_filler.clone());
 
         let proof_as_bytes = hex::decode(&proof.proof.encoded_proof)?;
@@ -440,18 +441,16 @@ impl VectorXOperator {
 
         // If status is false, it reverted.
         if !receipt.status() {
-            error!("Transaction reverted!");
+            return Err(anyhow::anyhow!("Transaction reverted!"));
         }
 
-        println!("Transaction hash: {:?}", receipt.transaction_hash);
-
-        Ok(())
+        Ok(receipt.transaction_hash)
     }
 
     async fn run(&self) -> Result<()> {
         loop {
-            let loop_delay_mins = get_loop_delay_mins();
-            let block_interval = get_update_delay_blocks();
+            let loop_interval_mins = get_loop_interval_mins();
+            let block_interval = get_block_update_interval();
 
             // Check if there is a rotate available for the next authority set.
             let current_authority_set_id = self.find_rotate().await?;
@@ -459,7 +458,12 @@ impl VectorXOperator {
             // Request a rotate for the next authority set id.
             if let Some(current_authority_set_id) = current_authority_set_id {
                 let proof = self.request_rotate(current_authority_set_id).await?;
-                self.relay_rotate(proof).await?;
+                let tx_hash = self.relay_rotate(proof).await?;
+                info!(
+                    "Added authority set {}\nTransaction hash: {}",
+                    current_authority_set_id + 1,
+                    tx_hash
+                );
             }
 
             // Check if there is a header range request available.
@@ -467,14 +471,16 @@ impl VectorXOperator {
 
             if let Some(header_range_request) = header_range_request {
                 // Request the header range proof to block_to_step_to.
-                println!("Trusted block: {}", header_range_request.0);
-                println!("Target block: {}", header_range_request.1);
                 let proof = self
                     .request_header_range(header_range_request.0, header_range_request.1)
                     .await;
                 match proof {
                     Ok(proof) => {
-                        self.relay_header_range(proof).await?;
+                        let tx_hash = self.relay_header_range(proof).await?;
+                        info!(
+                            "Posted data commitment from block {} to block {}\nTransaction hash: {}",
+                            header_range_request.0, header_range_request.1, tx_hash
+                        );
                     }
                     Err(e) => {
                         error!("Header range proof generation failed: {}", e);
@@ -483,34 +489,34 @@ impl VectorXOperator {
             }
 
             // Sleep for N minutes.
-            info!("Sleeping for {} minutes.", loop_delay_mins);
-            tokio::time::sleep(tokio::time::Duration::from_secs(60 * loop_delay_mins)).await;
+            info!("Sleeping for {} minutes.", loop_interval_mins);
+            tokio::time::sleep(tokio::time::Duration::from_secs(60 * loop_interval_mins)).await;
         }
     }
 }
 
-fn get_loop_delay_mins() -> u64 {
-    let loop_delay_mins_env = env::var("LOOP_DELAY_MINS");
-    let mut loop_delay_mins = 60;
-    if loop_delay_mins_env.is_ok() {
-        loop_delay_mins = loop_delay_mins_env
+fn get_loop_interval_mins() -> u64 {
+    let loop_interval_mins_env = env::var("LOOP_INTERVAL_MINS");
+    let mut loop_interval_mins = 60;
+    if loop_interval_mins_env.is_ok() {
+        loop_interval_mins = loop_interval_mins_env
             .unwrap()
             .parse::<u64>()
-            .expect("invalid LOOP_DELAY_MINS");
+            .expect("invalid LOOP_INTERVAL_MINS");
     }
-    loop_delay_mins
+    loop_interval_mins
 }
 
-fn get_update_delay_blocks() -> u32 {
-    let update_delay_blocks_env = env::var("UPDATE_DELAY_BLOCKS");
-    let mut update_delay_blocks = 360;
-    if update_delay_blocks_env.is_ok() {
-        update_delay_blocks = update_delay_blocks_env
+fn get_block_update_interval() -> u32 {
+    let block_update_interval_env = env::var("BLOCK_UPDATE_INTERVAL");
+    let mut block_update_interval = 360;
+    if block_update_interval_env.is_ok() {
+        block_update_interval = block_update_interval_env
             .unwrap()
             .parse::<u32>()
-            .expect("invalid UPDATE_DELAY_BLOCKS");
+            .expect("invalid BLOCK_UPDATE_INTERVAL");
     }
-    update_delay_blocks
+    block_update_interval
 }
 
 #[tokio::main]

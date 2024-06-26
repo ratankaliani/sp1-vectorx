@@ -51,6 +51,10 @@ services:
         value: 11155111
       - key: CONTRACT_ADDRESS
         value: 0xEA5b658054Cc3646044770d60cfC4e17c5cA1c7d
+      - key: BLOCK_UPDATE_INTERVAL
+        value: 30
+      - key: LOOP_DELAY_MINS
+        value: 5
       - key: PRIVATE_KEY
         sync: false
       - key: RPC_URL
