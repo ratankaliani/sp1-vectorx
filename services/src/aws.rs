@@ -12,7 +12,7 @@ pub struct AWSClient {
     client: Client,
 }
 
-const JUSTIFICATION_TABLE: &str = "justifications/v2";
+const JUSTIFICATION_TABLE: &str = "justifications-v2";
 
 impl AWSClient {
     pub async fn new() -> Self {
