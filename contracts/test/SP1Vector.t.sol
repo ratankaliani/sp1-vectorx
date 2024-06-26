@@ -9,7 +9,7 @@ import "forge-std/console.sol";
 import {Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {SP1MockVerifier} from "@sp1-contracts/SP1MockVerifier.sol";
-import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract VectorXTest is Test {
     using stdJson for string;

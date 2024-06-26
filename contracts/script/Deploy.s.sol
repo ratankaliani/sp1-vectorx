@@ -10,7 +10,7 @@ import {SP1Verifier} from "@sp1-contracts/SP1Verifier.sol";
 import {SP1MockVerifier} from "@sp1-contracts/SP1MockVerifier.sol";
 import {ISP1Verifier} from "@sp1-contracts/ISP1Verifier.sol";
 import {SP1Vector} from "../src/SP1Vector.sol";
-import {ERC1967Proxy} from "@openzeppelin/proxy/ERC1967/ERC1967Proxy.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployScript is Script {
     using stdJson for string;
@@ -56,6 +56,6 @@ contract DeployScript is Script {
 
         vm.stopBroadcast();
 
-        return address(vectorx);
+        return address(sp1Vector);
     }
 }

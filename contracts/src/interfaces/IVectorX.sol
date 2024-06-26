@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.0;
 
 interface IVectorX {
     /// @notice Emits event with the inputs of a header range request.
