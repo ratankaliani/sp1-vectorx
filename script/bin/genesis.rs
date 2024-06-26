@@ -46,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
         genesis_header: String,
         genesis_authority_set_id: u64,
         genesis_authority_set_hash: String,
-        vectorx_program_vkey: String,
+        sp1_vector_program_vkey: String,
         header_range_commitment_tree_size: u32,
     }
 
@@ -55,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
         genesis_header: format!("{:#x}", header_hash),
         genesis_authority_set_id: authority_set_id,
         genesis_authority_set_hash: format!("{:#x}", authority_set_hash),
-        vectorx_program_vkey: vk.bytes32(),
+        sp1_vector_program_vkey: vk.bytes32(),
         header_range_commitment_tree_size: HEADER_RANGE_COMMITMENT_TREE_SIZE,
     };
 
@@ -64,7 +64,7 @@ async fn main() -> anyhow::Result<()> {
              output.genesis_header,
              output.genesis_authority_set_id,
              output.genesis_authority_set_hash,
-             output.vectorx_program_vkey,
+             output.sp1_vector_program_vkey,
              output.header_range_commitment_tree_size,
     );
 
