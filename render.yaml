@@ -61,3 +61,49 @@ services:
         sync: false
       - key: SP1_PRIVATE_KEY
         sync: false
+  - type: worker
+    runtime: rust
+    name: indexer-hex
+    repo: https://github.com/succinctlabs/sp1-vectorx
+    region: frankfurt
+    plan: standard
+    rootDir: services
+    buildCommand: cargo build --bin indexer --release
+    startCommand: cargo run --bin indexer --release
+    autoDeploy: true
+    envVars:
+      - key: AVAIL_URL
+        value: wss://rpc-hex-devnet.avail.tools/ws
+      - key: AVAIL_CHAIN_ID
+        value: hex
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: KEY_ID
+        sync: false
+  - type: worker
+    runtime: rust
+    name: indexer-turing
+    repo: https://github.com/succinctlabs/sp1-vectorx
+    region: frankfurt
+    plan: standard
+    rootDir: services
+    buildCommand: cargo build --bin indexer --release
+    startCommand: cargo run --bin indexer --release
+    autoDeploy: true
+    envVars:
+      - key: AVAIL_URL
+        value: wss://turing-rpc.avail.so/ws
+      - key: AVAIL_CHAIN_ID
+        value: turing
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: KEY_ID
+        sync: false
