@@ -321,10 +321,4 @@ contract SP1Vector is IVectorX, TimelockedUpgradeable {
 
         emit AuthoritySetStored(ro.current_authority_set_id + 1, ro.new_authority_set_hash);
     }
-
-    /// @notice Update the verification key hash if the SP1 program was updated.
-    /// @param _vkey The verification key hash of the new SP1 program.
-    function updateVkeyHash(bytes32 _vkey) external onlyGuardian {
-        vectorXProgramVkey = _vkey;
-    }
 }
