@@ -255,6 +255,8 @@ function verifyMerkleBranch(
     index: number,
     dataCommitment: Uint8Array
 ) {
+    console.log("Branch length: " + branch.length);
+    console.log("Index: " + index);
     // Verify the branch matches the data commitment.
     let currentHash = dataRoots[index];
     let indexSoFar = index;
@@ -275,6 +277,31 @@ function verifyMerkleBranch(
         isEqualUint8Array(currentHash, dataCommitment),
         'Data commitment does not match the root constructed from the Merkle tree branch! This means that the computed data commitment or the Merkle tree branch is incorrect.'
     );
+}
+
+// Compute the Merkle Root from the dataRoots after confirming it's a power of 2.
+function computeDataCommitment(dataRoots: Uint8Array[]): Uint8Array {
+    console.log("Data roots length: " + dataRoots.length);
+    if (dataRoots.length != 512) {
+        throw new Error('Data roots length must be a power of 2!');
+    }
+    let level = dataRoots;
+
+    // Continue combining pairs until we get to the root
+    while (level.length > 1) {
+        const nextLevel: Uint8Array[] = [];
+
+        for (let i = 0; i < level.length; i += 2) {
+            // If there's an odd number of nodes, duplicate the last node
+            let hashStr = createHash('sha256').update(Buffer.concat([level[i], level[i]])).digest('hex');
+            nextLevel.push(new Uint8Array(Buffer.from(hashStr, 'hex')));
+        }
+
+        level = nextLevel;
+        console.log("Level: ", level.map((node) => Buffer.from(node).toString('hex')));
+    }
+
+    return level[0];
 }
 
 /**
@@ -375,14 +402,24 @@ export async function GET(req: NextRequest) {
             chainName!
         );
 
+        console.log("All the data roots: ", dataRoots.map((root) => Buffer.from(root).toString('hex')));
+
         // Extend the header array to commitmentTreeSize (fill with empty bytes).
         if (dataRoots.length < commitmentTreeSize) {
             const additionalRoots = new Array(commitmentTreeSize - dataRoots.length).fill(new Uint8Array(32));
             dataRoots = dataRoots.concat(additionalRoots);
         }
 
+        // Compute the data commitment hash using dataRoots.
+        console.log("Data commitment: " + Buffer.from(dataCommitment).toString('hex'));
+        let expectedDataCommitment = computeDataCommitment(dataRoots);
+        console.log("Expected data commitment: " + Buffer.from(expectedDataCommitment).toString('hex'));
+
         // Get the merkle branch for the requested block number by computing the Merkle tree branch
         // of the tree constructed from the data roots.
+        console.log("Start block number: " + startBlockNumber);
+        console.log("End block number: " + endBlockNumber);
+        console.log("Requested block: " + requestedBlock);
         const index = requestedBlock - startBlockNumber - 1;
         let branch = computeMerkleLayersAndBranch(commitmentTreeSize, dataRoots, index);
 

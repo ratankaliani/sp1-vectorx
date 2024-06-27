@@ -102,10 +102,13 @@ impl RpcDataFetcher {
         Ok(justification_data)
     }
 
+    /// Get the inputs for a header range proof. Optionally pass in the header range commitment tree size.
+    /// If not passed in, it will be set to the nearest power of 2.
     pub async fn get_header_range_inputs(
         &self,
         trusted_block: u32,
         target_block: u32,
+        header_range_commitment_tree_size: Option<u32>,
     ) -> HeaderRangeInputs {
         let trusted_header = self.get_header(trusted_block).await;
         let trusted_header_hash: alloy_primitives::FixedBytes<32> =
@@ -114,8 +117,18 @@ impl RpcDataFetcher {
             self.get_authority_set_data_for_block(trusted_block).await;
 
         let num_headers = target_block - trusted_block + 1;
-        // TODO: Should be fetched from the contract when we take this to production.
-        let merkle_tree_size = get_merkle_tree_size(num_headers);
+        let merkle_tree_size: usize;
+        if let Some(header_range_commitment_tree_size) = header_range_commitment_tree_size {
+            assert!(
+                header_range_commitment_tree_size >= num_headers
+                    && header_range_commitment_tree_size.is_power_of_two(),
+                "Header range commitment tree size must be greater than or equal to the number of headers and a power of two"
+            );
+            merkle_tree_size = header_range_commitment_tree_size as usize;
+        } else {
+            // NOTE: DANGEROUS. ONLY USED IN TESTING. IN PROD, FETCH FROM CONTRACT.
+            merkle_tree_size = get_merkle_tree_size(num_headers);
+        }
 
         let headers = self
             .get_block_headers_range(trusted_block, target_block)

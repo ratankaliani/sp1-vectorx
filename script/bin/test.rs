@@ -1,8 +1,9 @@
 //! A simple script to test the generation of proofs.
 
+use alloy::sol_types::SolType;
 use services::input::RpcDataFetcher;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::ProofType;
+use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 #[tokio::main]
@@ -11,10 +12,10 @@ async fn main() -> anyhow::Result<()> {
 
     // Supply an initial authority set id, trusted block, and target block.
     let authority_set_id = 64u64;
-    let trusted_block = 272355;
-    let target_block = 272534;
+    let trusted_block = 305130;
+    let target_block = 305160;
 
-    let proof_type = ProofType::RotateProof;
+    let proof_type = ProofType::HeaderRangeProof;
 
     let fetcher = RpcDataFetcher::new().await;
     let mut stdin: SP1Stdin = SP1Stdin::new();
@@ -23,7 +24,7 @@ async fn main() -> anyhow::Result<()> {
     match proof_type {
         ProofType::HeaderRangeProof => {
             let header_range_inputs = fetcher
-                .get_header_range_inputs(trusted_block, target_block)
+                .get_header_range_inputs(trusted_block, target_block, Some(512))
                 .await;
             let justification_data = fetcher
                 .get_justification_data_for_block(target_block)
@@ -44,7 +45,20 @@ async fn main() -> anyhow::Result<()> {
 
     let client = ProverClient::new();
 
-    let (_, report) = client.execute(ELF, stdin)?;
+    let (pv, report) = client.execute(ELF, stdin)?;
+
+    let proof_data = ProofOutput::abi_decode(pv.as_slice(), true)?;
+
+    match proof_type {
+        ProofType::HeaderRangeProof => {
+            let header_range_proof = HeaderRangeOutputs::abi_decode(&proof_data.1, true)?;
+            println!("Header Range Proof: {:?}", header_range_proof);
+        }
+        ProofType::RotateProof => {
+            let rotate_proof = RotateOutputs::abi_decode(&proof_data.2, true)?;
+            println!("Rotate Proof: {:?}", rotate_proof);
+        }
+    }
 
     println!("Exeuction Report: {:?}", report);
 

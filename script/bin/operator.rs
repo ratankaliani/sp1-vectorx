@@ -25,7 +25,7 @@ const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf
 sol! {
     #[allow(missing_docs)]
     #[sol(rpc)]
-    contract VectorX {
+    contract SP1Vector {
         bool public frozen;
         uint32 public latestBlock;
         uint64 public latestAuthoritySetId;
@@ -120,8 +120,19 @@ impl VectorXOperator {
         let fetcher = RpcDataFetcher::new().await;
 
         let proof_type = ProofType::HeaderRangeProof;
+        // Fetch the header range commitment tree size from the contract.
+        let contract = SP1Vector::new(self.contract_address, self.wallet_filler.clone());
+        let output = contract
+            .headerRangeCommitmentTreeSize()
+            .call()
+            .await
+            .unwrap();
         let header_range_inputs = fetcher
-            .get_header_range_inputs(trusted_block, target_block)
+            .get_header_range_inputs(
+                trusted_block,
+                target_block,
+                Some(output.headerRangeCommitmentTreeSize),
+            )
             .await;
 
         let curr_authority_set_id = fetcher.get_authority_set_id(target_block - 1).await;
@@ -244,7 +255,7 @@ impl VectorXOperator {
     async fn get_contract_data_for_header_range(&self) -> Result<HeaderRangeContractData> {
         let fetcher = RpcDataFetcher::new().await;
 
-        let contract = VectorX::new(self.contract_address, self.wallet_filler.clone());
+        let contract = SP1Vector::new(self.contract_address, self.wallet_filler.clone());
 
         let vectorx_latest_block = contract.latestBlock().call().await?.latestBlock;
         let header_range_commitment_tree_size = contract
@@ -275,7 +286,7 @@ impl VectorXOperator {
 
     // Current block and whether next authority set hash exists.
     async fn get_contract_data_for_rotate(&self) -> Result<RotateContractData> {
-        let contract = VectorX::new(self.contract_address, self.wallet_filler.clone());
+        let contract = SP1Vector::new(self.contract_address, self.wallet_filler.clone());
 
         // Fetch the current block from the contract
         let vectorx_latest_block = contract.latestBlock().call().await?.latestBlock;
@@ -320,7 +331,7 @@ impl VectorXOperator {
         let last_justified_block = fetcher.last_justified_block(authority_set_id).await;
 
         // Step to the last justified block of the current epoch if it is in range. When the last
-        // justified block is 0, the VectorX contract's latest epoch is the current epoch on the
+        // justified block is 0, the SP1Vector contract's latest epoch is the current epoch on the
         // Avail chain.
         if last_justified_block != 0
             && last_justified_block <= vectorx_current_block + header_range_commitment_tree_size
@@ -371,9 +382,9 @@ impl VectorXOperator {
         Some(block_to_step_to)
     }
 
-    /// Relay a header range proof to the SP1 VectorX contract.
+    /// Relay a header range proof to the SP1 SP1Vector contract.
     async fn relay_header_range(&self, proof: SP1PlonkBn254Proof) -> Result<B256> {
-        let contract = VectorX::new(self.contract_address, self.wallet_filler.clone());
+        let contract = SP1Vector::new(self.contract_address, self.wallet_filler.clone());
 
         let proof_as_bytes = hex::decode(&proof.proof.encoded_proof)?;
 
@@ -409,9 +420,9 @@ impl VectorXOperator {
         Ok(receipt.transaction_hash)
     }
 
-    /// Relay a rotate proof to the SP1 VectorX contract.
+    /// Relay a rotate proof to the SP1 SP1Vector contract.
     async fn relay_rotate(&self, proof: SP1PlonkBn254Proof) -> Result<B256> {
-        let contract = VectorX::new(self.contract_address, self.wallet_filler.clone());
+        let contract = SP1Vector::new(self.contract_address, self.wallet_filler.clone());
 
         let proof_as_bytes = hex::decode(&proof.proof.encoded_proof)?;
 
