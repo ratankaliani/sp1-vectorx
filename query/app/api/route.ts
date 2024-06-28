@@ -255,8 +255,6 @@ function verifyMerkleBranch(
     index: number,
     dataCommitment: Uint8Array
 ) {
-    console.log("Branch length: " + branch.length);
-    console.log("Index: " + index);
     // Verify the branch matches the data commitment.
     let currentHash = dataRoots[index];
     let indexSoFar = index;
@@ -281,7 +279,6 @@ function verifyMerkleBranch(
 
 // Compute the Merkle Root from the dataRoots after confirming it's a power of 2.
 function computeDataCommitment(dataRoots: Uint8Array[], commitmentTreeSize: number): Uint8Array {
-    console.log("Data roots length: " + dataRoots.length);
     if (dataRoots.length != commitmentTreeSize) {
         throw new Error('Data roots length must be a power of 2!');
     }
