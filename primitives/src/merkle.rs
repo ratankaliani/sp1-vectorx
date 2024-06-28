@@ -51,8 +51,6 @@ pub fn get_merkle_root_commitments(
     // Confirm that it's greater than the number of headers that's passed in.
     assert!(tree_size >= decoded_headers.len());
 
-    println!("Tree size: {:?}", tree_size);
-
     // Pad the leaves to a fixed size of tree_size.
     while state_root_leaves.len() < tree_size {
         state_root_leaves.push(B256::from([0u8; 32]));
