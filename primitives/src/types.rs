@@ -11,8 +11,9 @@ use serde::{Deserialize, Serialize};
 /// bytes32 target_header_hash
 /// bytes32 state_root_commitment;
 /// bytes32 data_root_commitment;
+/// uint32 commitment_tree_size;
 pub type HeaderRangeOutputs = sol! {
-    tuple(uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32, bytes32)
+    tuple(uint32, bytes32, uint64, bytes32, uint32, bytes32, bytes32, bytes32, uint32)
 };
 
 /// uint64 current_authority_set_id;

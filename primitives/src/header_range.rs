@@ -90,6 +90,7 @@ pub fn verify_header_range(
         header_hashes[header_hashes.len() - 1],
         state_root_commitment,
         data_root_commitment,
+        header_range_inputs.merkle_tree_size as u32,
     ))
     .try_into()
     .unwrap()

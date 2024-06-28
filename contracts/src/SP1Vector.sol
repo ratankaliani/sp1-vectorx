@@ -85,6 +85,7 @@ contract SP1Vector is IVectorX, TimelockedUpgradeable {
         bytes32 target_header_hash;
         bytes32 state_root_commitment;
         bytes32 data_root_commitment;
+        uint32 merkle_tree_size;
     }
 
     struct RotateOutputs {
@@ -213,6 +214,11 @@ contract SP1Vector is IVectorX, TimelockedUpgradeable {
 
         // Decode the header range outputs from the proof.
         HeaderRangeOutputs memory hro = abi.decode(proofOutputs.headerRangeOutputs, (HeaderRangeOutputs));
+
+        // Check the merkle tree size matches the expected size.
+        if (hro.merkle_tree_size != headerRangeCommitmentTreeSize) {
+            revert InvalidMerkleTreeSize();
+        }
 
         // Verify the trusted header hash has already been proven in the contract.
         bytes32 storedTrustedHeader = blockHeightToHeaderHash[latestBlock];

@@ -57,6 +57,9 @@ interface IVectorX {
     /// @notice The proof type is not HeaderRangeProof or RotateProof.
     error InvalidProofType();
 
+    /// @notice The merkle tree size does not match the expected size.
+    error InvalidMerkleTreeSize();
+
     /// @notice The trusted block inside the proof does not match the trusted block of the contract.
     error BlockHeightMismatch();
 }
