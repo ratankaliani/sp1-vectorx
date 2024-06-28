@@ -3,7 +3,7 @@
 use alloy::sol_types::SolType;
 use services::input::RpcDataFetcher;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::{HeaderRangeOutputs, ProofOutput, ProofType, RotateOutputs};
+use sp1_vectorx_primitives::types::{ProofOutput, ProofType};
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 #[tokio::main]
@@ -47,18 +47,7 @@ async fn main() -> anyhow::Result<()> {
 
     let (pv, report) = client.execute(ELF, stdin)?;
 
-    let proof_data = ProofOutput::abi_decode(pv.as_slice(), true)?;
-
-    match proof_type {
-        ProofType::HeaderRangeProof => {
-            let header_range_proof = HeaderRangeOutputs::abi_decode(&proof_data.1, true)?;
-            println!("Header Range Proof: {:?}", header_range_proof);
-        }
-        ProofType::RotateProof => {
-            let rotate_proof = RotateOutputs::abi_decode(&proof_data.2, true)?;
-            println!("Rotate Proof: {:?}", rotate_proof);
-        }
-    }
+    let _ = ProofOutput::abi_decode(pv.as_slice(), true)?;
 
     println!("Exeuction Report: {:?}", report);
 
