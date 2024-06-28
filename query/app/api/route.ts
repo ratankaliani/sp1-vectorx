@@ -292,8 +292,7 @@ function computeDataCommitment(dataRoots: Uint8Array[]): Uint8Array {
         const nextLevel: Uint8Array[] = [];
 
         for (let i = 0; i < level.length; i += 2) {
-            // If there's an odd number of nodes, duplicate the last node
-            let hashStr = createHash('sha256').update(Buffer.concat([level[i], level[i]])).digest('hex');
+            let hashStr = createHash('sha256').update(Buffer.concat([level[i], level[i + 1]])).digest('hex');
             nextLevel.push(new Uint8Array(Buffer.from(hashStr, 'hex')));
         }
 
@@ -402,13 +401,13 @@ export async function GET(req: NextRequest) {
             chainName!
         );
 
-        console.log("All the data roots: ", dataRoots.map((root) => Buffer.from(root).toString('hex')));
-
         // Extend the header array to commitmentTreeSize (fill with empty bytes).
         if (dataRoots.length < commitmentTreeSize) {
             const additionalRoots = new Array(commitmentTreeSize - dataRoots.length).fill(new Uint8Array(32));
             dataRoots = dataRoots.concat(additionalRoots);
         }
+
+        console.log("All the data roots: ", dataRoots.map((root) => Buffer.from(root).toString('hex')));
 
         // Compute the data commitment hash using dataRoots.
         console.log("Data commitment: " + Buffer.from(dataCommitment).toString('hex'));
