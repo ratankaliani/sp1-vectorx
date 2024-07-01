@@ -1,3 +1,4 @@
+use codec::{Compact, Decode, Encode};
 use ed25519_consensus::{Signature, VerificationKey};
 
 use types::CircuitJustification;
@@ -107,53 +108,11 @@ pub fn decode_and_verify_precommit(precommit: Vec<u8>) -> ([u8; 32], u32, u64, u
     (block_hash, block_number, round, authority_set_id)
 }
 
-/// Decode a SCALE-encoded compact int.
-pub fn decode_scale_compact_int(bytes: &[u8]) -> (u64, usize) {
-    if bytes.is_empty() {
-        panic!("Cannot SCALE decode empty bytes.");
-    }
-
-    let first_byte = bytes[0];
-    let flag = first_byte & 0b11;
-
-    match flag {
-        0b00 => {
-            // Single-byte mode
-            (u64::from(first_byte >> 2), 1)
-        }
-        0b01 => {
-            // Two-byte mode
-            if bytes.len() < 2 {
-                panic!("Not enough bytes for two-byte mode");
-            }
-            let value = (u64::from(first_byte) >> 2) | (u64::from(bytes[1]) << 6);
-            (value, 2)
-        }
-        0b10 => {
-            // Four-byte mode
-            if bytes.len() < 4 {
-                panic!("Not enough bytes for four-byte mode");
-            }
-            let value = (u64::from(first_byte) >> 2)
-                | (u64::from(bytes[1]) << 6)
-                | (u64::from(bytes[2]) << 14)
-                | (u64::from(bytes[3]) << 22);
-            (value, 4)
-        }
-        0b11 => {
-            // Big integer mode
-            let byte_count = ((first_byte >> 2) + 4) as usize;
-            if bytes.len() < byte_count + 1 {
-                panic!("Not enough bytes for big integer mode");
-            }
-            let mut value = 0u64;
-            for i in 0..byte_count {
-                value |= (u64::from(bytes[i + 1])) << (i * 8);
-            }
-            (value, byte_count + 1)
-        }
-        _ => unreachable!(),
-    }
+/// Decode a SCALE-encoded compact int and get the value and the number of bytes it took to encode.
+pub fn decode_scale_compact_int(bytes: Vec<u8>) -> (u64, usize) {
+    let value = Compact::<u64>::decode(&mut bytes.as_slice())
+        .expect("Failed to decode SCALE-encoded compact int.");
+    (value.into(), value.encoded_size())
 }
 
 /// Verify that the encoded validators match the provided pubkeys, have the correct weight, and the delay is zero.
@@ -196,7 +155,7 @@ mod tests {
         let encoded_nums: Vec<Vec<u8>> = nums.iter().map(|num| Compact(*num).encode()).collect();
         let zipped: Vec<(&Vec<u8>, &u32)> = encoded_nums.iter().zip(nums.iter()).collect();
         for (encoded_num, num) in zipped {
-            let (value, _) = decode_scale_compact_int(encoded_num);
+            let (value, _) = decode_scale_compact_int(encoded_num.to_vec());
             assert_eq!(value, *num as u64);
         }
     }

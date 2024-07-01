@@ -98,7 +98,7 @@ pub fn decode_header(header_bytes: Vec<u8>) -> DecodedHeaderData {
     let parent_hash = B256::from_slice(&header_bytes[..cursor]);
 
     // The next section is the variable-length encoded block number.
-    let (block_nb, num_bytes) = decode_scale_compact_int(&header_bytes[cursor..cursor + 5]);
+    let (block_nb, num_bytes) = decode_scale_compact_int(header_bytes[cursor..cursor + 5].to_vec());
     cursor += num_bytes;
 
     // After the block number is the state root.

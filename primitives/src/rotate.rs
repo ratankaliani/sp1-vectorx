@@ -62,7 +62,8 @@ pub fn verify_encoding_epoch_end_header(
     cursor += 6;
 
     // Decode the encoded scheduled change message length.
-    let (_, decoded_byte_length) = decode_scale_compact_int(&header_bytes[cursor..cursor + 5]);
+    let (_, decoded_byte_length) =
+        decode_scale_compact_int(header_bytes[cursor..cursor + 5].to_vec());
     cursor += decoded_byte_length;
 
     // Verify the next byte after encoded scheduled change message is scheduled change enum flags.
@@ -72,7 +73,7 @@ pub fn verify_encoding_epoch_end_header(
 
     // Decoded the encoded authority set size.
     let (authority_set_size, decoded_byte_length) =
-        decode_scale_compact_int(&header_bytes[cursor..cursor + 5]);
+        decode_scale_compact_int(header_bytes[cursor..cursor + 5].to_vec());
     assert_eq!(authority_set_size, num_authorities);
     cursor += decoded_byte_length;
 
