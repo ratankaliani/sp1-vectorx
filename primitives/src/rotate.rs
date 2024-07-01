@@ -38,7 +38,8 @@ pub fn verify_rotate(rotate_inputs: RotateInputs) -> [u8; ROTATE_OUTPUTS_LENGTH]
     .unwrap()
 }
 
-/// Verify the encoded epoch end header is formatted correctly, and that the provided new pubkeys match the encoded ones.
+/// Verify the encoded epoch end header is formatted correctly, and that the supplied pubkeys match
+/// the pubkeys encoded in the header.
 pub fn verify_encoding_epoch_end_header(
     header_bytes: &[u8],
     start_cursor: usize,

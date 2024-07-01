@@ -1,9 +1,9 @@
 use anyhow::Result;
-use sp1_vectorx_primitives::merkle::get_merkle_tree_size;
-use sp1_vectorx_primitives::types::{
+use sp1_vector_primitives::merkle::get_merkle_tree_size;
+use sp1_vector_primitives::types::{
     CircuitJustification, HeaderRangeInputs, HeaderRotateData, RotateInputs,
 };
-use sp1_vectorx_primitives::{
+use sp1_vector_primitives::{
     compute_authority_set_commitment, consts::HASH_SIZE, verify_encoded_validators,
     verify_signature,
 };
@@ -135,6 +135,11 @@ impl RpcDataFetcher {
             .await;
         let encoded_headers: Vec<Vec<u8>> = headers.iter().map(|header| header.encode()).collect();
 
+        let (target_justification, _) = self
+            .get_justification_data_for_block(target_block)
+            .await
+            .expect("Failed to get justification data for target block.");
+
         HeaderRangeInputs {
             trusted_block,
             target_block,
@@ -143,6 +148,7 @@ impl RpcDataFetcher {
             authority_set_id,
             merkle_tree_size,
             encoded_headers,
+            target_justification,
         }
     }
 
@@ -393,8 +399,6 @@ impl RpcDataFetcher {
         &self,
         block_number: u32,
     ) -> Option<(CircuitJustification, Header)> {
-        // Note: The db justification type is from VectorX, and we need to map it onto the
-        // CircuitJustification SP1 VectorX type.
         let grandpa_justification = self.get_justification(block_number).await;
 
         if grandpa_justification.is_err() {
@@ -552,7 +556,7 @@ impl RpcDataFetcher {
 #[cfg(test)]
 mod tests {
     use avail_subxt::config::Header;
-    use sp1_vectorx_primitives::decode_precommit;
+    use sp1_vector_primitives::decode_and_verify_precommit;
 
     use super::*;
 
@@ -664,7 +668,7 @@ mod tests {
             &authority_set_id,
         ));
 
-        let (_, block_number, _, _) = decode_precommit(signed_message.clone());
+        let (_, block_number, _, _) = decode_and_verify_precommit(signed_message.clone());
 
         println!("block number {:?}", block_number);
     }

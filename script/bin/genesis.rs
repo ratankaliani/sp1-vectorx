@@ -2,10 +2,6 @@
 //!
 //!     `cargo build --release --bin genesis`
 //!
-//!
-//!
-//!
-//!
 use avail_subxt::config::Header;
 use clap::Parser;
 use services::input::RpcDataFetcher;

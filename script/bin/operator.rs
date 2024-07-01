@@ -18,7 +18,7 @@ use anyhow::Result;
 use log::{error, info};
 use services::input::RpcDataFetcher;
 use sp1_sdk::{ProverClient, SP1PlonkBn254Proof, SP1ProvingKey, SP1Stdin};
-use sp1_vectorx_primitives::types::ProofType;
+use sp1_vector_primitives::types::ProofType;
 use sp1_vectorx_script::relay::{self};
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 

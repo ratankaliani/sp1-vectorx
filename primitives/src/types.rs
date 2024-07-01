@@ -93,6 +93,7 @@ pub struct HeaderRangeInputs {
     pub target_block: u32,
     pub merkle_tree_size: usize,
     pub encoded_headers: Vec<Vec<u8>>,
+    pub target_justification: CircuitJustification,
 }
 
 #[derive(Debug, Deserialize, Serialize)]

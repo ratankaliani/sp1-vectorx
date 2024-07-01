@@ -13,7 +13,12 @@ import {SP1Vector} from "../src/SP1Vector.sol";
 import {TimelockedUpgradeable} from "@succinctx/upgrades/TimelockedUpgradeable.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
-contract DeployScript is Script {
+// Required environment variables:
+// - CONTRACT_ADDRESS
+// - SP1_VECTOR_PROGRAM_VKEY
+// - SP1_PROVER
+
+contract UpgradeScript is Script {
     using stdJson for string;
 
     function setUp() public {}
@@ -21,9 +26,7 @@ contract DeployScript is Script {
     function run() public returns (address) {
         vm.startBroadcast();
 
-        bytes32 create2Salt = bytes32(vm.envBytes("CREATE2_SALT"));
-
-        SP1Vector sp1VectorImpl = new SP1Vector{salt: bytes32(create2Salt)}();
+        SP1Vector sp1VectorImpl = new SP1Vector();
 
         address existingProxyAddress = vm.envAddress("CONTRACT_ADDRESS");
         TimelockedUpgradeable proxy = TimelockedUpgradeable(existingProxyAddress);
@@ -31,13 +34,12 @@ contract DeployScript is Script {
 
         SP1Vector sp1Vector = SP1Vector(address(existingProxyAddress));
 
-        SP1Verifier verifier = new SP1Verifier();
-        SP1MockVerifier mockVerifier = new SP1MockVerifier();
-
         // Update the SP1 Verifier address and the program vkey.
         if (vm.envBool("MOCK")) {
+            SP1MockVerifier mockVerifier = new SP1MockVerifier();
             sp1Vector.updateVerifier(address(mockVerifier));
         } else {
+            SP1Verifier verifier = new SP1Verifier();
             sp1Vector.updateVerifier(address(verifier));
         }
         sp1Vector.updateVectorXProgramVkey(vm.envBytes32("SP1_VECTOR_PROGRAM_VKEY"));

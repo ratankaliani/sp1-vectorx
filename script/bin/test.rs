@@ -3,7 +3,7 @@
 use alloy::sol_types::SolType;
 use services::input::RpcDataFetcher;
 use sp1_sdk::{utils::setup_logger, ProverClient, SP1Stdin};
-use sp1_vectorx_primitives::types::{ProofOutput, ProofType};
+use sp1_vector_primitives::types::{ProofOutput, ProofType};
 const ELF: &[u8] = include_bytes!("../../program/elf/riscv32im-succinct-zkvm-elf");
 
 #[tokio::main]
@@ -26,14 +26,9 @@ async fn main() -> anyhow::Result<()> {
             let header_range_inputs = fetcher
                 .get_header_range_inputs(trusted_block, target_block, Some(512))
                 .await;
-            let justification_data = fetcher
-                .get_justification_data_for_block(target_block)
-                .await
-                .unwrap();
 
             stdin.write(&proof_type);
             stdin.write(&header_range_inputs);
-            stdin.write(&justification_data.0);
         }
         ProofType::RotateProof => {
             let rotate_input = fetcher.get_rotate_inputs(authority_set_id).await;
